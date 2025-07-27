@@ -6,7 +6,7 @@ void setup(void) {
     Console::log("Starting NEKOS V0.01 alpha");
 }
 
-#ifdef DISPLAY
+#ifdef HAS_DISPLAY
     #include "services/DisplayService.h"
 #endif
 

@@ -3,9 +3,12 @@
 #include "FreeRTOS.h"
 #include "config/device.h"
 #include "../lib/GlobalServiceRegistry.h"
-#ifdef SH1106
+#ifdef SSD1306I2C
+U8G2_SSD1306_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
+#else
 U8G2_SH1106_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 #endif
+
 muif_t muif_list[] = {
     MUIF_RO("MM", mui_u8g2_goto_data),
     MUIF_BUTTON("MF", mui_u8g2_goto_form_w1_pi),
