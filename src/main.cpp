@@ -7,7 +7,7 @@ void setup(void) {
 }
 
 #ifdef HAS_DISPLAY
-    #include "services/DisplayService.h"
+    #include "services/core/DisplayService.h"
 #endif
 
 void loop(void) {
