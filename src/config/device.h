@@ -4,6 +4,10 @@
 #define MENU_PREV_PIN 9
 #define MENU_HOME_PIN 11
 
+#ifdef EMULATOR
+    #define SSD1306I2C
+#endif
+
 #ifdef WIFI_USB_NUGGET
     #define HAS_DISPLAY
     #define SH1106I2C

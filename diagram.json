@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "author": "Kamaii",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-wemos-s2-mini", "id": "esp", "top": -39.46, "left": -4.8, "attrs": {} },
+    { "type": "board-ssd1306", "id": "oled1", "top": 108.74, "left": 144.23, "attrs": {} }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "esp:GND.1", "oled1:GND", "black", [ "v0" ] ],
+    [ "oled1:VCC", "esp:3V3", "red", [ "v0" ] ],
+    [ "esp:35(SCL)", "oled1:SCL", "blue", [ "v0" ] ],
+    [ "esp:33(SDA)", "oled1:SDA", "green", [ "h0" ] ]
+  ],
+  "dependencies": {}
+}
