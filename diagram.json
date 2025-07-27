@@ -3,8 +3,36 @@
   "author": "Kamaii",
   "editor": "wokwi",
   "parts": [
-    { "type": "board-wemos-s2-mini", "id": "esp", "top": -39.46, "left": -4.8, "attrs": {} },
-    { "type": "board-ssd1306", "id": "oled1", "top": 108.74, "left": 144.23, "attrs": {} }
+    { "type": "board-wemos-s2-mini", "id": "esp", "top": -145.06, "left": 52.8, "attrs": {} },
+    { "type": "board-ssd1306", "id": "oled1", "top": 22.34, "left": 9.83, "attrs": {} },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": -80.2,
+      "left": 403.2,
+      "attrs": { "color": "green", "xray": "1" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn2",
+      "top": -22.6,
+      "left": 403.2,
+      "attrs": { "color": "green", "xray": "1" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn3",
+      "top": 73.4,
+      "left": 403.2,
+      "attrs": { "color": "green", "xray": "1" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn4",
+      "top": 25.4,
+      "left": 403.2,
+      "attrs": { "color": "green", "xray": "1" }
+    }
   ],
   "connections": [
     [ "esp:TX", "$serialMonitor:RX", "", [] ],
@@ -12,7 +40,16 @@
     [ "esp:GND.1", "oled1:GND", "black", [ "v0" ] ],
     [ "oled1:VCC", "esp:3V3", "red", [ "v0" ] ],
     [ "esp:35(SCL)", "oled1:SCL", "blue", [ "v0" ] ],
-    [ "esp:33(SDA)", "oled1:SDA", "green", [ "h0" ] ]
+    [ "esp:33(SDA)", "oled1:SDA", "green", [ "h0" ] ],
+    [ "esp:GND.1", "btn1:2.l", "black", [ "v0" ] ],
+    [ "btn1:2.l", "esp:GND.1", "black", [ "h0" ] ],
+    [ "btn2:2.l", "esp:GND.1", "black", [ "h0" ] ],
+    [ "btn4:2.l", "esp:GND.1", "black", [ "h0" ] ],
+    [ "btn1:1.l", "esp:18", "green", [ "h0" ] ],
+    [ "btn2:1.l", "esp:9(MISO)", "green", [ "h0" ] ],
+    [ "esp:11(MOSI)", "btn4:1.l", "green", [ "h0" ] ],
+    [ "esp:7(SCK)", "btn3:1.l", "green", [ "h0" ] ],
+    [ "btn3:2.l", "esp:GND.1", "black", [ "h0" ] ]
   ],
   "dependencies": {}
 }
