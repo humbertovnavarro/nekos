@@ -49,7 +49,7 @@ void u8g2_event_handler(U8G2 display, MUIU8G2 mui) {
     }
 }
 
-void display_setup(TaskService *pvparams)
+void display_setup(TaskService *service)
 {
     u8g2.begin(MENU_SELECT_PIN, MENU_NEXT_PIN, MENU_PREV_PIN, U8X8_PIN_NONE, U8X8_PIN_NONE, MENU_HOME_PIN);
     u8g2.setFont(u8g2_font_pressstart2p_8f);
@@ -57,7 +57,7 @@ void display_setup(TaskService *pvparams)
     mui.gotoForm(1, 0);
 }
 
-void display_loop(TaskService *pvparams)
+void display_loop(TaskService *service)
 {
     u8g2.setFont(u8g2_font_helvR08_tr);
     if (mui.isFormActive())
