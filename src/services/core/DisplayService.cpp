@@ -2,7 +2,7 @@
 #include <MUIU8g2.h>
 #include "FreeRTOS.h"
 #include "config/device.h"
-#include "../lib/GlobalServiceRegistry.h"
+#include "../../lib/GlobalServiceRegistry.h"
 #ifdef SSD1306I2C
 U8G2_SSD1306_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 #else
