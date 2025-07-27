@@ -1,3 +1,4 @@
+// Do not put your application code here. It goes in services/yourapp.cpp. Look at services/core for examples.
 #include "Arduino.h"
 #include "lib/Console.h"
 

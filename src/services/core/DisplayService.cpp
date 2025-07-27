@@ -2,7 +2,8 @@
 #include <MUIU8g2.h>
 #include "FreeRTOS.h"
 #include "config/device.h"
-#include "../../lib/GlobalServiceRegistry.h"
+#include "../../lib/TaskService.h"
+
 #ifdef SSD1306I2C
 U8G2_SSD1306_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 #else
@@ -13,6 +14,7 @@ muif_t muif_list[] = {
     MUIF_RO("MM", mui_u8g2_goto_data),
     MUIF_BUTTON("MF", mui_u8g2_goto_form_w1_pi),
 };
+
 fds_t fds_data[] =
     // Form 1: Main Menu
     MUI_FORM(1)
@@ -33,14 +35,29 @@ fds_t fds_data[] =
             MUI_XYT("CO", 0, 0, " OK ");
 MUIU8G2 mui;
 uint8_t is_redraw = 1;
-void display_setup(void *pvparams)
+
+void u8g2_event_handler(U8G2 display, MUIU8G2 mui) {
+    switch(u8g2.getMenuEvent()) {
+        case U8X8_MSG_GPIO_MENU_SELECT:
+            mui.sendSelect();
+            is_redraw = 1;
+            break;
+        case U8X8_MSG_GPIO_MENU_NEXT:
+            mui.nextField();
+            is_redraw = 1;
+            break;
+    }
+}
+
+void display_setup(TaskService *pvparams)
 {
     u8g2.begin(MENU_SELECT_PIN, MENU_NEXT_PIN, MENU_PREV_PIN, U8X8_PIN_NONE, U8X8_PIN_NONE, MENU_HOME_PIN);
     u8g2.setFont(u8g2_font_pressstart2p_8f);
     mui.begin(u8g2, fds_data, muif_list, sizeof(muif_list) / sizeof(muif_t));
     mui.gotoForm(1, 0);
 }
-void display_loop(void *pvparams)
+
+void display_loop(TaskService *pvparams)
 {
     u8g2.setFont(u8g2_font_helvR08_tr);
     if (mui.isFormActive())
@@ -54,6 +71,8 @@ void display_loop(void *pvparams)
             } while (u8g2.nextPage());
             is_redraw = 0; // menu is now up to date, no redraw required at the moment
         }
+        u8g2_event_handler(u8g2, mui);
     }
 }
-REGISTER_TASK_SERVICE(display, 4096, 0, 1)
+
+REGISTER_TASK_SERVICE(display, 4096, 0, 1);
