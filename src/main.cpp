@@ -1,9 +1,12 @@
 #include "Arduino.h"
 #include "services/core/DisplayService.h"
+#include "lib/Console.h"
 void setup(void) {
-    Serial.begin(115200);
+    Console::log("Starting NEKOS");
 }
 
 void loop(void) {
-    vTaskDelay(1);
+    Console::log("Hello from Arduino main Loop");
+    Serial.println("Something fucky");
+    vTaskDelay(100);
 }

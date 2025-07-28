@@ -1,6 +1,8 @@
 #pragma once
-#include <U8g2lib.h>
-#include <MUIU8g2.h>
-#include "FreeRTOS.h"
-void display_setup();
-void display_loop();
+
+// Forward declarations for task functions
+void display_setup(void* pvparams);
+void display_loop(void* pvparams);
+
+// TaskService declaration via macro (if macro creates an extern or instantiates a TaskService object, adapt accordingly)
+//CREATE_TASK(display_service, display_setup, display_loop, 8192, 0, 0);
