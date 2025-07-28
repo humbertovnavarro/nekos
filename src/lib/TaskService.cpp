@@ -15,9 +15,8 @@ extern "C" void TaskHandler(void* pvparams) {
 TaskService::TaskService(const char* service_id,
                          uint32_t stack_depth,
                          UBaseType_t priority,
-                         BaseType_t core_id,
-                         TaskFunction_t setup,
-                         TaskFunction_t loop)
+                         TaskServiceHandler setup,
+                         TaskServiceHandler loop)
     : service_id(service_id),
       stack_depth(stack_depth),
       priority(priority),
@@ -25,7 +24,7 @@ TaskService::TaskService(const char* service_id,
       setup(setup),
       loop(loop),
       service_handle(nullptr),
-      status(pdFAIL)
+      status(1)
 {
     status = xTaskCreatePinnedToCore(
         TaskHandler,
@@ -40,6 +39,7 @@ TaskService::TaskService(const char* service_id,
     if (status != pdPASS) {
         ESP_LOGE("TaskService", "Failed to create service task: %s", service_id);
     }
+    GlobalServiceRegistry::addService(this);
 }
 
 TaskService::~TaskService() {

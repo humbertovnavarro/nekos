@@ -11,42 +11,42 @@ U8G2_SH1106_128X64_NONAME_1_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 #endif
 
 muif_t muif_list[] = {
-    MUIF_RO("MM", mui_u8g2_goto_data),
-    MUIF_BUTTON("MF", mui_u8g2_goto_form_w1_pi),
+    MUIF_RO("GP",mui_u8g2_goto_data),
+    MUIF_BUTTON("GC", mui_u8g2_goto_form_w1_pi),
 };
 
-fds_t fds_data[] =
-    // Form 1: Main Menu
+fds_t fds_data[] = {
     MUI_FORM(1)
-        MUI_STYLE(0)
-            MUI_DATA("MM",
-                     MUI_2 "WIFI|" MUI_2 "BLE|" MUI_2 "USB|" MUI_2 "GPIO|" MUI_2 "NEOPIXEL|")
-                MUI_XYA("MF", 4, 14, 0)
-                    MUI_XYA("MF", 4, 28, 1)
-                        MUI_XYA("MF", 4, 42, 2)
-                            MUI_XYA("MF", 4, 56, 3)
-    // Form 2: Placeholder.
-    MUI_FORM(2)
-        MUI_STYLE(0)
-            MUI_XYT("GB", 0, 0, "Back")
-    // Form 3: Console Output
-    MUI_FORM(3)
-        MUI_STYLE(0)
-            MUI_XYT("CO", 0, 0, " OK ");
+    MUI_STYLE(0)
+    MUI_DATA("GP", 
+        MUI_10 "Goto Buttons|"
+        MUI_20 "uint8 Number|"
+        MUI_30 "uint8 Checkbox|"
+        MUI_40 "uint8 Cycle Options|"
+        MUI_50 "uint8 ParentChild Select|"
+        MUI_60 "uint8 Char/Text Input|"
+        MUI_70 "uint16 Cycle Options|"
+        MUI_80 "uint16 ParentChild Select")
+    MUI_XYA("GC", 5, 25, 0) 
+    MUI_XYA("GC", 5, 37, 1) 
+    MUI_XYA("GC", 5, 49, 2) 
+    MUI_XYA("GC", 5, 61, 3) 
+};
 MUIU8G2 mui;
-uint8_t is_redraw = 1;
 
-void u8g2_event_handler(U8G2 display, MUIU8G2 mui) {
+uint8_t u8g2_event_handler(U8G2 display, MUIU8G2 mui) {
     switch(u8g2.getMenuEvent()) {
         case U8X8_MSG_GPIO_MENU_SELECT:
             mui.sendSelect();
-            is_redraw = 1;
-            break;
+            return 1;
         case U8X8_MSG_GPIO_MENU_NEXT:
             mui.nextField();
-            is_redraw = 1;
-            break;
+            return 1;
+        case U8X8_MSG_GPIO_MENU_PREV:
+            mui.prevField();
+            return 1;
     }
+    return 0;
 }
 
 void display_setup(TaskService *service)
@@ -56,23 +56,21 @@ void display_setup(TaskService *service)
     mui.begin(u8g2, fds_data, muif_list, sizeof(muif_list) / sizeof(muif_t));
     mui.gotoForm(1, 0);
 }
-
+uint8_t redraw = 1;
 void display_loop(TaskService *service)
 {
-    u8g2.setFont(u8g2_font_helvR08_tr);
     if (mui.isFormActive())
     {
-        if (is_redraw)
-        { // is any redraw of the menu required?
+        if (redraw)
+        {
             u8g2.firstPage();
             do
             {
                 mui.draw();
             } while (u8g2.nextPage());
-            is_redraw = 0; // menu is now up to date, no redraw required at the moment
         }
-        u8g2_event_handler(u8g2, mui);
+        redraw = u8g2_event_handler(u8g2, mui);
     }
 }
 
-REGISTER_TASK_SERVICE(display, 4096, 0, 1);
+TaskService svc("task", 1024, 0, display_setup, display_loop);
