@@ -1,12 +1,9 @@
-// Do not put your application code here. It goes in services/yourapp.cpp. Look at services/core for examples.
 #include "Arduino.h"
+#include "services/core/DisplayService.h"
 void setup(void) {
+    Serial.begin(115200);
 }
 
-#ifdef HAS_DISPLAY
-    #include "services/core/DisplayService.h"
-#endif
-
 void loop(void) {
-    vTaskStartScheduler();
+    vTaskDelay(1);
 }
