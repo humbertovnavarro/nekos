@@ -21,3 +21,12 @@ StarterFn makeTask(const std::string& name, int priority, int stack_size, TaskFn
                                      NAME##_setup, NAME##_loop);         \
         start_##NAME();                                                 \
     } while (0)
+
+#define STOP_TASK(NAME)                     \
+    do {                                    \
+        if (NAME##_task_control.handle &&   \
+            *NAME##_task_control.handle) {  \
+            vTaskDelete(*NAME##_task_control.handle); \
+            *NAME##_task_control.handle = nullptr;   \
+        }                                   \
+    } while (0)
