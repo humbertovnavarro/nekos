@@ -27,14 +27,17 @@ fds_t fds_data[] = {
     MUI_XYA("MB", 5, 61, 3) 
 };
 
-
+uint8_t framebuffer_handle;
 void menu_setup() {
-    framebuffer_acquire();
     mui.begin(u8g2, fds_data, muif_list, sizeof(muif_list) / sizeof(muif_t));
     mui.gotoForm(1, 0);
 }
 
 void menu_loop() {
+    while(framebuffer_acquire() == pdFAIL) {
+        return;
+    }
+
     if (redraw)
     {
         u8g2.firstPage();

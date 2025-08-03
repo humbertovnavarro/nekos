@@ -20,6 +20,7 @@
 #endif
 
 SemaphoreHandle_t framebuffer_lock_handle;
+uint8_t last_framebuffer_lock = 0;
 bool framebuffer_lock = false;
 
 void framebuffer_init()
@@ -29,9 +30,8 @@ void framebuffer_init()
     framebuffer_lock_handle = xSemaphoreCreateMutex();
 }
 
-void framebuffer_acquire() {
-    xSemaphoreTake(framebuffer_lock_handle, 100);
-    framebuffer_lock = true;
+BaseType_t framebuffer_acquire() {
+    return xSemaphoreTake(framebuffer_lock_handle, 1000);
 }
 
 void framebuffer_release() {
