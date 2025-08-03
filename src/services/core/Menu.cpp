@@ -28,7 +28,7 @@ fds_t fds_data[] = {
 
 
 void menu_setup() {
-    acquire_framebuffer();
+    framebuffer_acquire();
     mui.begin(u8g2, fds_data, muif_list, sizeof(muif_list) / sizeof(muif_t));
     mui.gotoForm(1, 0);
 }

@@ -18,7 +18,7 @@ extern bool framebuffer_lock;
 
 // Function declarations
 void framebuffer_init();
-void acquire_framebuffer();
-void release_framebuffer();
+void framebuffer_acquire();
+void framebuffer_release();
 
 #endif // FRAMEBUFFER_H

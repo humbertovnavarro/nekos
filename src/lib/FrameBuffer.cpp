@@ -29,12 +29,12 @@ void framebuffer_init()
     framebuffer_lock_handle = xSemaphoreCreateMutex();
 }
 
-void acquire_framebuffer() {
+void framebuffer_acquire() {
     xSemaphoreTake(framebuffer_lock_handle, 100);
     framebuffer_lock = true;
 }
 
-void release_framebuffer() {
+void framebuffer_release() {
     framebuffer_lock = false;
     xSemaphoreGive(framebuffer_lock_handle);
 }
