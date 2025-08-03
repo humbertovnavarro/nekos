@@ -8,7 +8,7 @@
     #define MENU_HOME_PIN 37
 #endif
 
-#ifdef WIFI_USB_NUGGET
+#ifdef WIFI_USB_FELINE
     #define HAS_DISPLAY
     #define SH1106I2C
     #define MENU_SELECT_PIN 7

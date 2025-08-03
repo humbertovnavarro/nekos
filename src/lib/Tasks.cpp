@@ -1,22 +1,31 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "Tasks.h"
-#define MAX_REGISTERED_TASKS 32
+#include <functional>
+#include <string>
 
-static RegisteredTask g_registered_tasks[MAX_REGISTERED_TASKS];
-static size_t g_registered_task_count = 0;
+using TaskFn = std::function<void()>;
+using StarterFn = std::function<void()>;
 
-void register_task(const char* name, TaskHandle_t handle) {
-    if (g_registered_task_count < MAX_REGISTERED_TASKS) {
-        g_registered_tasks[g_registered_task_count++] = { name, handle };
+// Task wrapper function
+static void task_entry(void* params) {
+    auto* fn_pair = static_cast<std::pair<TaskFn, TaskFn>*>(params);
+    fn_pair->first(); // call setup()
+    while (true) {
+        fn_pair->second(); // call loop()
     }
 }
 
-size_t get_registered_task_count() {
-    return g_registered_task_count;
-}
-
-const RegisteredTask* get_registered_task(size_t index) {
-    if (index >= g_registered_task_count) return nullptr;
-    return &g_registered_tasks[index];
+// Returns a function that starts a FreeRTOS task with the given setup and loop functions
+StarterFn makeTask(const std::string& name, int priority, int stack_size, TaskFn setup, TaskFn loop) {
+    return [=]() {
+        auto* fn_pair = new std::pair<TaskFn, TaskFn>(setup, loop); // will live forever
+        xTaskCreate(
+            task_entry,
+            name.c_str(),
+            stack_size,
+            fn_pair,
+            priority,
+            nullptr
+        );
+    };
 }

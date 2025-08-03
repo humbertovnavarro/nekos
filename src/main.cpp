@@ -1,12 +1,14 @@
 #include "Arduino.h"
-#include "services/core/DisplayService.h"
-#include "lib/Console.h"
+#include "lib/FrameBuffer.h"
+#include "services/core/Menu.h"
+#include "lib/Tasks.h"
+
 void setup(void) {
-    Console::log("Starting NEKOS");
+    Serial.println("Starting NEKOS");
+    framebuffer_init();
+    START_TASK(menu, 0, 8192);
 }
 
 void loop(void) {
-    Console::log("Hello from Arduino main Loop");
-    Serial.println("Something fucky");
     vTaskDelay(100);
 }
