@@ -1,26 +1,43 @@
 #pragma once
+#include <Arduino.h>
+using CommandCallback = void(*)(const char* args);
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-#include "freertos/semphr.h"
-#include <string.h>
-#include <stdint.h>
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
 
 class Console {
 public:
-    static constexpr size_t MAX_MESSAGE_LENGTH = 64;
-    static constexpr size_t QUEUE_LENGTH = 8;
-    static constexpr size_t MAX_LOG_QUEUES = 16;
+    static constexpr int MAX_COMMANDS = 64;
+    static constexpr int SHELL_INPUT_BUFFER_SIZE = 256;
+    static constexpr int QUEUE_MSG_SIZE = 256;
+    // Initialize serial console at given baud rate
+    static void begin(unsigned long baud = 115200);
 
-    // Initialize if needed (not currently doing anything)
-    static void init();
+    // Call repeatedly in your loop()
+    static void poll();
 
-    // Log a message to all registered queues
-    static void log(const char* message);
+    // Register a command by name and callback (callback receives args string)
+    static bool registerCommand(const char* name, CommandCallback cb);
 
-    // Register a new message queue and get a handle to it
-    static QueueHandle_t registerConsoleMessageQueueHandle();
+    // Helpers for listing commands
+    static int getCommandCount();
+    static const char* getCommandName(int index);
 
+    // Logging helpers
+    static void log(const char *message);
+    static void logf(const char *fmt, ...);
+    static void setDeviceName(const char* name);
 private:
-    static QueueHandle_t outputQueues[MAX_LOG_QUEUES];
+    struct Command {
+        char name[32];
+        CommandCallback cb;
+    };
+    static void printPrompt();
+    static void _dispatchLine(const char* line);
+
+    static char _lineBuf[SHELL_INPUT_BUFFER_SIZE];
+    static size_t _lineIndex;
+
+    static Command _commands[MAX_COMMANDS];
+    static int _commandCount;
 };
