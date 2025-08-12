@@ -2,9 +2,7 @@
 #include "lib/Console.h"
 #include "WiFi.h"
 
-void setup(void) {
-    Console::init(true);
-    
+void setup() {
     Console::registerCommand("help", [](const char* args){
         Console::log("Available commands:");
         int count = Console::getCommandCount();
@@ -15,23 +13,26 @@ void setup(void) {
             }
         }
     });
+    
+    Console::registerCommand("heap", [](const char* args){
+        size_t freeHeap = xPortGetFreeHeapSize();
+        size_t minHeap = xPortGetMinimumEverFreeHeapSize();
+        Console::logf("Free Heap: %u bytes", (unsigned)freeHeap);
+        Console::logf("Min Ever Free Heap: %u bytes", (unsigned)minHeap);
+    });
 
-    Console::registerCommand("info", [](const char* args){
-        Console::log("This is a FreeRTOS shell example.");
+    Console::registerCommand("uptime", [](const char* args){
+        uint64_t ms = esp_timer_get_time() / 1000;
+        uint64_t seconds = ms / 1000;
+        uint64_t minutes = seconds / 60;
+        uint64_t hours = minutes / 60;
+        Console::logf("Uptime: %llu hours, %llu minutes, %llu seconds",
+                    hours, minutes % 60, seconds % 60);
     });
     
-    Console::registerCommand("ip", [](const char* args){
-        IPAddress ip = WiFi.localIP();
-        if (ip) {
-            Console::logf("IP Address: %s", ip.toString().c_str());
-        } else {
-            Console::log("IP Address: Not connected");
-        }
-    });
-
+    Console::begin();
 }
 
-void loop(void) {
-    vTaskDelay(100);
-    Console::init(true);
+void loop() {
+    Console::poll();
 }

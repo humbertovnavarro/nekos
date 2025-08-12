@@ -2,210 +2,134 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
+#include <WiFi.h> 
+#define BANNER
 
-QueueHandle_t Console::outputQueues[MAX_LOG_QUEUES] = { nullptr };
-SemaphoreHandle_t Console::mutex = nullptr;
-QueueHandle_t Console::ttyQueue = nullptr;
-QueueHandle_t Console::shellCommandQueue = nullptr;
-Console::Command Console::commands[MAX_COMMANDS] = {};
-Console::Command* Console::commandListHead = nullptr;
-int Console::commandCount = 0;
+char Console::_lineBuf[Console::SHELL_INPUT_BUFFER_SIZE];
+size_t Console::_lineIndex = 0;
+Console::Command Console::_commands[Console::MAX_COMMANDS] = {};
+int Console::_commandCount = 0;
+
+void Console::begin(unsigned long baud) {
+    Serial.begin(115200);
+    delay(100);
+    const char* banner[] = {
+    "      |\\---/|",
+    "      | ,_, |",
+    "       \\_`_/-..----.",
+    "    ___/ `   ' ,\"\"+ \\  ",
+    "   (__...'   __\\    |`.___.';",
+    "     (_,...'(_,.`__)/'.....+",
+    "  Welcome to Nekos Console! 🐱\n'help' to list commands",
+    nullptr
+    };
+    for (int i = 0; banner[i] != nullptr; ++i) {
+        Serial.println(banner[i]);
+    }
+    Serial.println();
+    printPrompt();
+}
 
 int Console::getCommandCount() {
-    return commandCount;
+    return _commandCount;
+}
+
+void Console::printPrompt() {
+    String ipStr = WiFi.localIP().toString();
+    Serial.printf("[%s@%s] > ", "nekos", ipStr.c_str());
 }
 
 const char* Console::getCommandName(int index) {
-    if (index < 0 || index >= commandCount) return nullptr;
-    Command* current = commandListHead;
-    int i = 0;
-    while (current && i < index) {
-        current = current->next;
-        i++;
-    }
-    return current ? current->name : nullptr;
+    if (index < 0 || index >= _commandCount) return nullptr;
+    return _commands[index].name;
 }
 
-
 bool Console::registerCommand(const char* name, CommandCallback cb) {
-    // Allocate new command node
-    Command* cmd = (Command*)malloc(sizeof(Command));
-    if (!cmd) return false; // malloc failed
+    if (!name || !cb) return false;
+    if (_commandCount >= MAX_COMMANDS) return false;
 
-    // Copy name safely
-    strncpy(cmd->name, name, sizeof(cmd->name) - 1);
-    cmd->name[sizeof(cmd->name) - 1] = '\0';
-
-    cmd->callback = cb;
-    cmd->next = nullptr;
-
-    // Append to list
-    if (commandListHead == nullptr) {
-        commandListHead = cmd;
-    } else {
-        Command* tail = commandListHead;
-        while (tail->next) tail = tail->next;
-        tail->next = cmd;
+    // Check duplicates
+    for (int i = 0; i < _commandCount; i++) {
+        if (strcmp(_commands[i].name, name) == 0) {
+            return false; // duplicate
+        }
     }
 
-    commandCount++;
+    strncpy(_commands[_commandCount].name, name, sizeof(_commands[_commandCount].name) - 1);
+    _commands[_commandCount].name[sizeof(_commands[_commandCount].name) - 1] = '\0';
+    _commands[_commandCount].cb = cb;
+    _commandCount++;
     return true;
 }
 
-void Console::shellCommandProcessorTask(void* param) {
-    char cmdBuffer[SHELL_INPUT_BUFFER_SIZE];
-    QueueHandle_t cmdQueue = Console::shellCommandQueue;
-    while (true) {
-        if (xQueueReceive(cmdQueue, cmdBuffer, portMAX_DELAY) == pdTRUE) {
-            // Parse command and args
-            char* args = nullptr;
-            char* cmdName = strtok_r(cmdBuffer, " ", &args);
-
-            if (!cmdName) {
-                log("Empty command received");
-                continue;
-            }
-
-            bool handled = false;
-            Command* current = commandListHead;
-            while (current) {
-                if (strcmp(cmdName, current->name) == 0) {
-                    if (current->callback) {
-                        current->callback(args);
-                        handled = true;
-                        break;
-                    }
-                }
-                current = current->next;
-            }
-
-            if (!handled) {
-                logf("Unknown command: %s", cmdName);
-            }
-        }
-    }
-}
-
-void Console::init(bool enableShell) {
-    Serial.begin(115200);
-    mutex = xSemaphoreCreateMutex();
-    while (!Serial) {
-        delay(10); // Wait for serial ready on some boards
-    }
-
-    ttyQueue = xQueueCreate(QUEUE_LENGTH, QUEUE_MSG_SIZE);
-    xTaskCreate(taskOutputTTY, "ConsoleTTY", 2048, NULL, 2, NULL);
-
-    if (enableShell) {
-        shellCommandQueue = xQueueCreate(QUEUE_LENGTH, SHELL_INPUT_BUFFER_SIZE);
-        xTaskCreate(taskShellInput, "ConsoleShellIn", 4096, NULL, 3, NULL);
-        xTaskCreate(shellCommandProcessorTask, "ShellCmdProc", 4096, NULL, 1, NULL);
-    }
-}
-
-QueueHandle_t Console::registerConsoleMessageQueueHandle() {
-    xSemaphoreTake(mutex, portMAX_DELAY);
-    for (int i = 0; i < MAX_LOG_QUEUES; i++) {
-        if (outputQueues[i] == nullptr) {
-            outputQueues[i] = xQueueCreate(QUEUE_LENGTH, QUEUE_MSG_SIZE);
-            xSemaphoreGive(mutex);
-            return outputQueues[i];
-        }
-    }
-    xSemaphoreGive(mutex);
-    return nullptr;
-}
-
-void Console::log(const char *message) {
+void Console::log(const char* message) {
     if (!message) return;
-    logf("%s", message);
+    Serial.println(message);
 }
 
-void Console::logf(const char *fmt, ...) {
+void Console::logf(const char* fmt, ...) {
     if (!fmt) return;
-    char buffer[QUEUE_MSG_SIZE];
-
+    char buf[QUEUE_MSG_SIZE];
     va_list args;
     va_start(args, fmt);
-    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    vsnprintf(buf, sizeof(buf), fmt, args);
     va_end(args);
-    xSemaphoreTake(mutex, portMAX_DELAY);
-    for (int i = 0; i < MAX_LOG_QUEUES; i++) {
-        if (outputQueues[i]) {
-            xQueueSendToBack(outputQueues[i], buffer, 0);
-        }
-    }
-    if (ttyQueue) {
-        xQueueSendToBack(ttyQueue, buffer, 0);
-    }
-    xSemaphoreGive(mutex);
+    Serial.println(buf);
 }
 
-void Console::logfLevel(const char *level, const char *fmt, ...) {
-    if (!fmt) return;
-    char buffer[QUEUE_MSG_SIZE];
+void Console::_dispatchLine(const char* line) {
+    if (!line || line[0] == '\0') return;
 
-    if (level) {
-        int written = snprintf(buffer, sizeof(buffer), "[%s] ", level);
-        if (written < 0 || written >= (int)sizeof(buffer)) {
-            buffer[sizeof(buffer) - 1] = '\0';
-            logf("%s", buffer);
+    // Always start command output on a new line
+    Serial.println(); 
+
+    char buf[SHELL_INPUT_BUFFER_SIZE];
+    strncpy(buf, line, sizeof(buf) - 1);
+    buf[sizeof(buf) - 1] = '\0';
+
+    char* saveptr = nullptr;
+    char* cmd = strtok_r(buf, " ", &saveptr);
+    char* args = strtok_r(nullptr, "", &saveptr);
+
+    if (!cmd) return;
+
+    for (int i = 0; i < _commandCount; ++i) {
+        if (strcmp(cmd, _commands[i].name) == 0) {
+            char args_copy[SHELL_INPUT_BUFFER_SIZE] = {0};
+            if (args) {
+                strncpy(args_copy, args, sizeof(args_copy) - 1);
+            }
+            _commands[i].cb(args_copy);
+            printPrompt();
             return;
         }
-
-        va_list args;
-        va_start(args, fmt);
-        vsnprintf(buffer + written, sizeof(buffer) - written, fmt, args);
-        va_end(args);
-    } else {
-        va_list args;
-        va_start(args, fmt);
-        vsnprintf(buffer, sizeof(buffer), fmt, args);
-        va_end(args);
     }
 
-    logf("%s", buffer);
+    logf("\n[ERROR] Unknown command: %s\nType 'help' for available commands.\n", cmd);
+    printPrompt();
 }
 
-void Console::taskOutputTTY(void *param) {
-    char buffer[QUEUE_MSG_SIZE];
-    while (true) {
-        if (xQueueReceive(ttyQueue, buffer, portMAX_DELAY) == pdTRUE) {
-            Serial.print(buffer);
-            Serial.print("\r\n");
-        }
-    }
-}
+void Console::poll() {
+    while (Serial.available() > 0) {
+        char c = (char)Serial.read();
+        if (c == '\r') continue;
 
-void Console::taskShellInput(void *param) {
-    static char lineBuffer[SHELL_INPUT_BUFFER_SIZE];
-    size_t index = 0;
-
-    while (true) {
-        if (Serial.available() > 0) {
-            char byte = (char)Serial.read();
-
-            if (byte == '\r' || byte == '\n') {
-                if (index > 0) {
-                    lineBuffer[index] = '\0';
-                    if (shellCommandQueue) {
-                        xQueueSendToBack(shellCommandQueue, lineBuffer, 0);
-                    }
-                    index = 0;
-                    Console::logf("> %s", lineBuffer); // Echo command
-                }
-                Serial.print("\r\n");
-            } else if (byte == '\b' || byte == 0x7F) {
-                if (index > 0) {
-                    index--;
-                    Serial.print("\b \b");
-                }
-            } else if (index < (SHELL_INPUT_BUFFER_SIZE - 1)) {
-                lineBuffer[index++] = byte;
-                Serial.write(byte);
+        if (c == '\n') {
+            if (_lineIndex > 0) {
+                _lineBuf[_lineIndex] = '\0';
+                _dispatchLine(_lineBuf);
+                _lineIndex = 0;
+                _lineBuf[0] = '\0';
             }
+        } else if ((c == '\b' || c == 0x7F) && _lineIndex > 0) {
+            _lineIndex--;
+            _lineBuf[_lineIndex] = '\0';
+            Serial.print("\b \b");
+        } else if (_lineIndex < (SHELL_INPUT_BUFFER_SIZE - 1)) {
+            _lineBuf[_lineIndex++] = c;
+            Serial.write(c);
         } else {
-            vTaskDelay(10 / portTICK_PERIOD_MS);
+            // Overflow, ignore char
         }
     }
 }
