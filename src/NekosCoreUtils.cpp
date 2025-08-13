@@ -1,6 +1,7 @@
 #include "NekosCoreUtils.h"
 #include "NekosConsole.h"
 #include "NekosFS.h"
+#include "NekosNet.h"
 #include "Arduino.h"
 namespace nekos {
     void registerCoreUtils() {
@@ -166,5 +167,151 @@ namespace nekos {
                 Console::logf("Directory not found: %s", newPath);
             }
         });
+        
+        Console::registerCommand("wifi_connect", [](const char* args){
+        char ssid[64], pass[64];
+        if (sscanf(args, "%63s %63s", ssid, pass) == 2) {
+            if (nekos::net::wifiConnect(ssid, pass)) {
+                Console::log("WiFi connected successfully.");
+            } else {
+                Console::log("Failed to connect to WiFi.");
+            }
+        } else {
+            Console::log("Usage: wifi_connect <SSID> <PASSWORD>");
+        }
+        });
+
+        Console::registerCommand("wifi_disconnect", [](const char*){
+            nekos::net::wifiDisconnect();
+            Console::log("WiFi disconnected.");
+        });
+
+        Console::registerCommand("wifi_status", [](const char*){
+            if (nekos::net::wifiIsConnected()) {
+                Console::logf("Connected. IP: %s", nekos::net::wifiGetLocalIP().c_str());
+            } else {
+                Console::log("Not connected to WiFi.");
+            }
+        });
+
+        Console::registerCommand("wifi_scan", [](const char*){
+            nekos::net::wifiScanNetworks();
+        });
+
+        Console::registerCommand("http_get", [](const char* args){
+            if (!args || strlen(args) == 0) {
+                Console::log("Usage: http_get <URL>");
+                return;
+            }
+            String resp = nekos::net::httpGet(args);
+            Console::log("HTTP GET Response:");
+            Console::log(resp.c_str());
+        });
+
+        Console::registerCommand("http_post", [](const char* args){
+            char url[128];
+            char json[256];
+            if (sscanf(args, "%127s %[^\n]", url, json) == 2) {
+                if (nekos::net::httpPostJSON(url, json)) {
+                    Console::log("POST successful.");
+                } else {
+                    Console::log("POST failed.");
+                }
+            } else {
+                Console::log("Usage: http_post <URL> <JSON_BODY>");
+            }
+        });    
+        
+        Console::registerCommand("wifi_connect", [](const char* args){
+            char ssid[64] = {0}, pass[64] = {0};
+            
+            // Try to parse two arguments: ssid and pass
+            int count = sscanf(args, "%63s %63s", ssid, pass);
+
+            if (count == 2) {
+                // Use given ssid and password
+                if (nekos::net::wifiConnect(ssid, pass)) {
+                    Console::log("WiFi connected successfully.");
+                } else {
+                    Console::log("Failed to connect to WiFi.");
+                }
+            } else if (count == 1) {
+                // Only one argument provided, check if length == 1 and it's a digit
+                size_t len = strlen(ssid);
+                if (len == 1 && isdigit(ssid[0])) {
+                    int idx = ssid[0] - '0';
+                    const char* env_ssid = Console::getEnv(String(idx).c_str());
+                    if (!env_ssid || !env_ssid[0]) {
+                        Console::log("No SSID found in environment at given index.");
+                        return;
+                    }
+                    // The rest of args after the first token is password
+                    // Move pointer forward after the first token (ssid)
+                    const char* pass_start = args + strlen(ssid);
+                    // Skip spaces
+                    while (*pass_start == ' ') pass_start++;
+
+                    if (*pass_start == '\0') {
+                        Console::log("Usage: wifi_connect <SSID> <PASSWORD> or wifi_connect <index> <PASSWORD>");
+                        return;
+                    }
+
+                    strncpy(pass, pass_start, sizeof(pass)-1);
+
+                    if (nekos::net::wifiConnect(env_ssid, pass)) {
+                        Console::log("WiFi connected successfully.");
+                    } else {
+                        Console::log("Failed to connect to WiFi.");
+                    }
+                } else {
+                    Console::log("Usage: wifi_connect <SSID> <PASSWORD> or wifi_connect <index> <PASSWORD>");
+                }
+            } else {
+                Console::log("Usage: wifi_connect <SSID> <PASSWORD> or wifi_connect <index> <PASSWORD>");
+            }
+        });
+
+
+        Console::registerCommand("wifi_disconnect", [](const char*){
+            nekos::net::wifiDisconnect();
+            Console::log("WiFi disconnected.");
+        });
+
+        Console::registerCommand("wifi_status", [](const char*){
+            if (nekos::net::wifiIsConnected()) {
+                Console::logf("Connected. IP: %s", nekos::net::wifiGetLocalIP().c_str());
+            } else {
+                Console::log("Not connected to WiFi.");
+            }
+        });
+
+        Console::registerCommand("wifi_scan", [](const char*){
+            nekos::net::wifiScanNetworks();
+        });
+
+        Console::registerCommand("http_get", [](const char* args){
+            if (!args || strlen(args) == 0) {
+                Console::log("Usage: http_get <URL>");
+                return;
+            }
+            String resp = nekos::net::httpGet(args);
+            Console::log("HTTP GET Response:");
+            Console::log(resp.c_str());
+        });
+
+        Console::registerCommand("http_post", [](const char* args){
+            char url[128];
+            char json[256];
+            if (sscanf(args, "%127s %[^\n]", url, json) == 2) {
+                if (nekos::net::httpPostJSON(url, json)) {
+                    Console::log("POST successful.");
+                } else {
+                    Console::log("POST failed.");
+                }
+            } else {
+                Console::log("Usage: http_post <URL> <JSON_BODY>");
+            }
+        });
+
     }
 }

@@ -2,6 +2,12 @@
 #include "WiFi.h"
 #include "Nekos.h"
 
+constexpr int MAX_LOG_LINES = 8;
+constexpr int MAX_LINE_LENGTH = 64;
+
+
+
+
 void setup() {
     nekos::fs::init();
     nekos::registerCoreUtils();
@@ -9,5 +15,5 @@ void setup() {
 }
 
 void loop() {
-    nekos::Console::poll();
+    vTaskDelay(portTICK_PERIOD_MS * 10);
 }

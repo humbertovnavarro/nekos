@@ -1,6 +1,7 @@
 #include "FreeRTOS.h"
 
 namespace nekos {
+    using LogCallback = void(*)(const char* buf);
     using CommandCallback = void(*)(const char* args);
     class Console {
     public:
@@ -11,6 +12,7 @@ namespace nekos {
         static constexpr int MAX_ENV_VARS = 32;
         static constexpr int MAX_ENV_NAME_LEN = 32;
         static constexpr int MAX_ENV_VALUE_LEN = 64;
+        static constexpr int MAX_LOG_CALLBACKS = 64;
         // Initialize serial console at given baud rate
         static void begin(unsigned long baud = 115200);
         // Call repeatedly in your loop()
@@ -27,11 +29,13 @@ namespace nekos {
         static bool setEnv(const char* name, const char* value);
         static const char* getEnv(const char* name);
         static bool unsetEnv(const char* name);
+        static bool registerLogCallback(LogCallback cb);
     private:
         struct Command {
             char name[32];
             CommandCallback cb;
         };
+
         struct EnvVar {
             char name[MAX_ENV_NAME_LEN];
             char value[MAX_ENV_VALUE_LEN];
@@ -45,5 +49,7 @@ namespace nekos {
         static Command _commands[MAX_COMMANDS];
         static int _commandCount;
         static EnvVar _envVars[MAX_ENV_VARS];
+        static LogCallback _logCallbacks[MAX_LOG_CALLBACKS];
+        static int _logCallbackCount;
     };
 }

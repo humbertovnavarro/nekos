@@ -10,6 +10,17 @@ namespace nekos {
     int Console::_commandCount = 0;
     char Console::_lineBuf[Console::SHELL_INPUT_BUFFER_SIZE] = {};
     size_t Console::_lineIndex = 0;
+    LogCallback Console::_logCallbacks[MAX_LOG_CALLBACKS];
+    int Console::_logCallbackCount = 0;
+    SemaphoreHandle_t logBufferMut;
+    TaskHandle_t consoleLoopHandle;
+
+    void consoleLoop(void* pvparams) {
+        for(;;) {
+            nekos::Console::poll();
+            vTaskDelay(1);
+        }
+    };
 
     void Console::begin(unsigned long baud) {
         Serial.begin(baud);
@@ -30,6 +41,7 @@ namespace nekos {
         Serial.println();
         setEnv("CWD", "/");
         printPrompt();
+        xTaskCreate(consoleLoop, "consoleLoop", 8192, nullptr, 0, &consoleLoopHandle);
     }
 
     int Console::getCommandCount() {
@@ -44,6 +56,14 @@ namespace nekos {
     const char* Console::getCommandName(int index) {
         if (index < 0 || index >= _commandCount) return nullptr;
         return _commands[index].name;
+    }
+
+    bool Console::registerLogCallback(LogCallback cb) {
+        if (!cb) return false;
+        if(_logCallbackCount >= MAX_LOG_CALLBACKS) return false;
+        _logCallbacks[_logCallbackCount] = cb;
+        _logCallbackCount++;
+        return true;
     }
 
     bool Console::registerCommand(const char* name, CommandCallback cb) {
@@ -66,7 +86,7 @@ namespace nekos {
 
     void Console::log(const char* message) {
         if (!message) return;
-        Serial.println(message);
+        Console::logf("%s\n", message);
     }
 
     void Console::logf(const char* fmt, ...) {
@@ -76,6 +96,10 @@ namespace nekos {
         va_start(args, fmt);
         vsnprintf(buf, sizeof(buf), fmt, args);
         va_end(args);
+        for(int i = 0; i < Console::_logCallbackCount; i++) {
+            _logCallbacks[i](buf);
+        }
+        // Always print to serial.
         Serial.println(buf);
     }
 
@@ -131,7 +155,6 @@ namespace nekos {
                 _lineBuf[_lineIndex++] = c;
                 Serial.write(c);
             } else {
-                // Overflow, ignore char
             }
         }
     }

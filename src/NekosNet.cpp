@@ -48,6 +48,7 @@ namespace nekos {
                 return;
             }
             for (int i = 0; i < n; ++i) {
+                setenv(String(i + 1).c_str(), WiFi.SSID(i).c_str(), true);
                 Serial.printf("  %d: %s (RSSI: %d dBm) %s\n", i + 1,
                               WiFi.SSID(i).c_str(),
                               WiFi.RSSI(i),
