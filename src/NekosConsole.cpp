@@ -12,7 +12,7 @@ namespace nekos {
     size_t Console::_lineIndex = 0;
 
     void Console::begin(unsigned long baud) {
-        Serial.begin(115200);
+        Serial.begin(baud);
         delay(100);
         const char* banner[] = {
         "      |\\---/|",
