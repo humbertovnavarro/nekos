@@ -7,7 +7,7 @@
 namespace nekos {
     // Define static members
     Console::EnvVar Console::_envVars[Console::MAX_ENV_VARS] = {};
-    Console::Command Console::_commands[Console::MAX_COMMANDS] = {};
+    Console::Command Console::commands[Console::MAX_COMMANDS] = {};
     int Console::_commandCount = 0;
     char Console::_lineBuf[Console::SHELL_INPUT_BUFFER_SIZE] = {};
     size_t Console::_lineIndex = 0;
@@ -16,9 +16,13 @@ namespace nekos {
 
     void consoleLoop(void* pvparams) {
         for(;;) {
-            nekos::Console::poll();
+            while (Serial.available() > 0) {
+                nekos::Console::poll();
+                vTaskDelay(portTICK_RATE_MS * 1);
+            }
+            vTaskDelay(portTICK_RATE_MS * 10);
         }
-    };
+    }
 
     void Console::begin(unsigned long baud) {
         Serial.begin(baud);
@@ -38,7 +42,7 @@ namespace nekos {
         Serial.println();
         setEnv("CWD", "/");
         printPrompt();
-        xTaskCreatePinnedToCore(consoleLoop, "consoleLoop", 8192, nullptr, 1, &consoleLoopHandle, 1);
+        xTaskCreate(consoleLoop, "consoleLoop", 8192, nullptr, 1, &consoleLoopHandle);
     }
 
     int Console::getCommandCount() {
@@ -51,7 +55,7 @@ namespace nekos {
 
     const char* Console::getCommandName(int index) {
         if (index < 0 || index >= _commandCount) return nullptr;
-        return _commands[index].name;
+        return commands[index].name;
     }
 
     bool Console::registerCommand(const char* name, CommandCallback cb) {
@@ -60,14 +64,14 @@ namespace nekos {
 
         // Check duplicates
         for (int i = 0; i < _commandCount; i++) {
-            if (strcmp(_commands[i].name, name) == 0) {
+            if (strcmp(commands[i].name, name) == 0) {
                 return false; // duplicate
             }
         }
 
-        strncpy(_commands[_commandCount].name, name, sizeof(_commands[_commandCount].name) - 1);
-        _commands[_commandCount].name[sizeof(_commands[_commandCount].name) - 1] = '\0';
-        _commands[_commandCount].cb = cb;
+        strncpy(commands[_commandCount].name, name, sizeof(commands[_commandCount].name) - 1);
+        commands[_commandCount].name[sizeof(commands[_commandCount].name) - 1] = '\0';
+        commands[_commandCount].cb = cb;
         _commandCount++;
         return true;
     }
@@ -99,12 +103,12 @@ namespace nekos {
         char* args = strtok_r(nullptr, "", &saveptr);
         if (!cmd) return;
         for (int i = 0; i < _commandCount; ++i) {
-            if (strcmp(cmd, _commands[i].name) == 0) {
+            if (strcmp(cmd, commands[i].name) == 0) {
                 char args_copy[SHELL_INPUT_BUFFER_SIZE] = {0};
                 if (args) {
                     strncpy(args_copy, args, sizeof(args_copy) - 1);
                 }
-                _commands[i].cb(args_copy);
+                commands[i].cb(args_copy);
                 printPrompt();
                 return;
             }
@@ -114,36 +118,31 @@ namespace nekos {
     }
 
     void Console::poll() {
-        while (Serial.available() > 0) {
-            vTaskDelay(1);
-            char c = (char)Serial.read();
-            if (c == '\r') continue;
-
-            if (c == '\n') {
-                if (_lineIndex > 0) {
-                    _lineBuf[_lineIndex] = '\0';
-                    _dispatchLine(_lineBuf);
-                    _lineIndex = 0;
-                    _lineBuf[0] = '\0';
-                }
-            } else if ((c == '\b' || c == 0x7F) && _lineIndex > 0) {
-                _lineIndex--;
+        char c = (char)Serial.read();
+        if (c == '\r') return;
+        if (c == '\n') {
+            if (_lineIndex > 0) {
                 _lineBuf[_lineIndex] = '\0';
-                Serial.print("\b \b");
-            } else if (_lineIndex < (SHELL_INPUT_BUFFER_SIZE - 1)) {
-                _lineBuf[_lineIndex++] = c;
-                Serial.write(c);
-            } else {
+                _dispatchLine(_lineBuf);
+                _lineIndex = 0;
+                _lineBuf[0] = '\0';
             }
+        } else if ((c == '\b' || c == 0x7F) && _lineIndex > 0) {
+            _lineIndex--;
+            _lineBuf[_lineIndex] = '\0';
+            Serial.print("\b \b");
+        } else if (_lineIndex < (SHELL_INPUT_BUFFER_SIZE - 1)) {
+            _lineBuf[_lineIndex++] = c;
+            Serial.write(c);
+        } else {
+
         }
     }
     
     bool Console::setEnv(const char* name, const char* value) {
         if (!name || !value) return false;
-
         // Check name length
         if (strlen(name) >= MAX_ENV_NAME_LEN) return false;
-
         // Try to find existing var
         for (int i = 0; i < MAX_ENV_VARS; i++) {
             if (_envVars[i].inUse && strcmp(_envVars[i].name, name) == 0) {
@@ -152,7 +151,6 @@ namespace nekos {
                 return true;
             }
         }
-
         // Find free slot
         for (int i = 0; i < MAX_ENV_VARS; i++) {
             if (!_envVars[i].inUse) {

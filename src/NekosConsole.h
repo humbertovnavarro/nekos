@@ -5,6 +5,11 @@ namespace nekos {
     class Console {
     public:
         static constexpr int MAX_COMMANDS = 64;
+        struct Command {
+            char name[32];
+            CommandCallback cb;
+        };
+        static Command commands[MAX_COMMANDS];
         static constexpr int SHELL_INPUT_BUFFER_SIZE = 256;
         static constexpr int QUEUE_MSG_SIZE = 256;
         // Environment variables support
@@ -29,11 +34,6 @@ namespace nekos {
         static const char* getEnv(const char* name);
         static bool unsetEnv(const char* name);
     private:
-        struct Command {
-            char name[32];
-            CommandCallback cb;
-        };
-
         struct EnvVar {
             char name[MAX_ENV_NAME_LEN];
             char value[MAX_ENV_VALUE_LEN];
@@ -44,7 +44,6 @@ namespace nekos {
         static void _parseAndExpandEnvVars(const char* input, char* output, size_t maxLen);
         static char _lineBuf[SHELL_INPUT_BUFFER_SIZE];
         static size_t _lineIndex;
-        static Command _commands[MAX_COMMANDS];
         static int _commandCount;
         static EnvVar _envVars[MAX_ENV_VARS];
         static int _logCallbackCount;
