@@ -30,4 +30,5 @@
     #define MENU_PREV_PIN 9
     #define MENU_HOME_PIN 11
     #define MONO_INPUT
+    #define BAUD 921600
 #endif

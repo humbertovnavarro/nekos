@@ -1,12 +1,13 @@
 #include <FS.h>
-#include <SPIFFS.h>
+#include <LittleFS.h>
 #include "FreeRTOS.h"
 #include "NekosFS.h"
+
 namespace nekos {
     namespace fs {
         // Initialize filesystem
         bool initFS(bool formatOnFail = true) {
-            if (!SPIFFS.begin(formatOnFail)) {
+            if (!LittleFS.begin(formatOnFail)) {
                 Serial.println("[FS] Mount Failed");
                 return false;
             }
@@ -15,7 +16,7 @@ namespace nekos {
 
         // Write string to file
         bool writeFile(const char* path, const String& content) {
-            File file = SPIFFS.open(path, FILE_WRITE);
+            File file = LittleFS.open(path, FILE_WRITE);
             if (!file) {
                 Serial.printf("[FS] Failed to open file for writing: %s\n", path);
                 return false;
@@ -26,12 +27,10 @@ namespace nekos {
         }
 
         bool touchFile(const char* path) {
-            // If file exists, just return true
-            if (SPIFFS.exists(path)) {
+            if (LittleFS.exists(path)) {
                 return true;
             }
-            // Create empty file
-            File file = SPIFFS.open(path, FILE_WRITE);
+            File file = LittleFS.open(path, FILE_WRITE);
             if (!file) {
                 Serial.printf("[FS] Failed to create file: %s\n", path);
                 return false;
@@ -41,13 +40,12 @@ namespace nekos {
         }
 
         bool appendFile(const char* path, const String& content) {
-            // Ensure file exists
-            if (!SPIFFS.exists(path)) {
+            if (!LittleFS.exists(path)) {
                 if (!touchFile(path)) {
                     return false;
                 }
             }
-            File file = SPIFFS.open(path, FILE_APPEND);
+            File file = LittleFS.open(path, FILE_APPEND);
             if (!file) {
                 Serial.printf("[FS] Failed to open file for appending: %s\n", path);
                 return false;
@@ -59,7 +57,7 @@ namespace nekos {
 
         // Read file content into String
         String readFile(const char* path) {
-            File file = SPIFFS.open(path, FILE_READ);
+            File file = LittleFS.open(path, FILE_READ);
             if (!file) {
                 Serial.printf("[FS] Failed to open file for reading: %s\n", path);
                 return "";
@@ -74,16 +72,16 @@ namespace nekos {
 
         // Delete file
         bool deleteFile(const char* path) {
-            if (!SPIFFS.exists(path)) {
+            if (!LittleFS.exists(path)) {
                 Serial.printf("[FS] File not found: %s\n", path);
                 return false;
             }
-            return SPIFFS.remove(path);
+            return LittleFS.remove(path);
         }
 
         // List all files in a directory
         void listDir(const char* dirname, uint8_t levels) {
-            File root = SPIFFS.open(dirname);
+            File root = LittleFS.open(dirname);
             if (!root || !root.isDirectory()) {
                 Serial.println("[FS] Failed to open directory");
                 return;
@@ -107,11 +105,11 @@ namespace nekos {
                 Serial.println("[FS] mkdir: invalid path");
                 return false;
             }
-            if (SPIFFS.exists(path)) {
+            if (LittleFS.exists(path)) {
                 Serial.printf("[FS] mkdir: already exists: %s\n", path);
                 return false;
             }
-            if (SPIFFS.mkdir(path)) {
+            if (LittleFS.mkdir(path)) {
                 Serial.printf("[FS] mkdir: created: %s\n", path);
                 return true;
             } else {
@@ -120,29 +118,29 @@ namespace nekos {
             }
         }
 
-        // Initialize SPIFFS, optionally format on failure
+        // Initialize LittleFS, optionally format on failure
         bool init(bool formatOnFail) {
-            if (!SPIFFS.begin(true)) {
+            if (!LittleFS.begin(true)) {
                 if (formatOnFail) {
-                    SPIFFS.format();
-                    return SPIFFS.begin();
+                    LittleFS.format();
+                    return LittleFS.begin();
                 }
                 return false;
             }
             return true;
         }
 
-        // Format the SPIFFS filesystem
+        // Format the LittleFS filesystem
         bool format() {
-            return SPIFFS.format();
+            return LittleFS.format();
         }
 
         // Copy file from srcPath to destPath
         bool copyFile(const char* srcPath, const char* destPath) {
-            File src = SPIFFS.open(srcPath, FILE_READ);
+            File src = LittleFS.open(srcPath, FILE_READ);
             if (!src) return false;
 
-            File dest = SPIFFS.open(destPath, FILE_WRITE);
+            File dest = LittleFS.open(destPath, FILE_WRITE);
             if (!dest) {
                 src.close();
                 return false;
@@ -167,17 +165,17 @@ namespace nekos {
         // Move (rename) file from oldPath to newPath
         bool moveFile(const char* oldPath, const char* newPath) {
             if (!copyFile(oldPath, newPath)) return false;
-            return SPIFFS.remove(oldPath);
+            return LittleFS.remove(oldPath);
         }
 
         // Check if a file or directory exists
         bool fileExists(const char* path) {
-            return SPIFFS.exists(path);
+            return LittleFS.exists(path);
         }
 
         // Get size of file in bytes, or 0 if not found
         size_t getFileSize(const char* path) {
-            File file = SPIFFS.open(path, FILE_READ);
+            File file = LittleFS.open(path, FILE_READ);
             if (!file) return 0;
             size_t size = file.size();
             file.close();
@@ -186,7 +184,7 @@ namespace nekos {
 
         // Recursively find files matching pattern (substring match) and add to outFiles
         void findFiles(const char* dirname, const char* pattern, std::vector<String>& outFiles, uint8_t levels) {
-            File dir = SPIFFS.open(dirname);
+            File dir = LittleFS.open(dirname);
             if (!dir || !dir.isDirectory()) return;
 
             File file = dir.openNextFile();
@@ -203,31 +201,52 @@ namespace nekos {
             }
         }
 
-        // Return free space in bytes on SPIFFS
+        // Return free space in bytes on LittleFS
         size_t getFreeSpace() {
-            return SPIFFS.totalBytes() - SPIFFS.usedBytes();
+            return LittleFS.totalBytes() - LittleFS.usedBytes();
         }
 
-        // Return total space in bytes on SPIFFS
+        // Return total space in bytes on LittleFS
         size_t getTotalSpace() {
-            return SPIFFS.totalBytes();
+            return LittleFS.totalBytes();
         }
         
         void joinPath(const char* cwd, const char* path, char* outPath, size_t outLen) {
+            if (!outPath || outLen == 0) return;
+
+            // If path is absolute or empty/null, just copy it as-is (or "/")
             if (!path || path[0] == '/') {
-                // absolute path or empty, just copy
                 strncpy(outPath, path ? path : "/", outLen);
                 outPath[outLen - 1] = '\0';
-            } else if (cwd && cwd[0] != '\0') {
-                snprintf(outPath, outLen, "%s/%s", cwd, path);
-            } else {
-                snprintf(outPath, outLen, "%s", path);
+                return;
             }
+
+            // If cwd is empty or null, just copy path
+            if (!cwd || cwd[0] == '\0') {
+                strncpy(outPath, path, outLen);
+                outPath[outLen - 1] = '\0';
+                return;
+            }
+
+            // Remove trailing slash from cwd if present
+            size_t cwdLen = strlen(cwd);
+            bool cwdEndsWithSlash = cwdLen > 0 && cwd[cwdLen - 1] == '/';
+
+            if (cwdEndsWithSlash) {
+                // snprintf without adding another slash
+                snprintf(outPath, outLen, "%s%s", cwd, path);
+            } else {
+                // Add slash between cwd and path
+                snprintf(outPath, outLen, "%s/%s", cwd, path);
+            }
+
+            // Ensure null termination
+            outPath[outLen - 1] = '\0';
         }
         
         bool isDir(const char* path) {
             if (!path || path[0] == '\0') return false;
-            File file = SPIFFS.open(path);
+            File file = LittleFS.open(path);
             if (!file) {
                 return false;
             }
@@ -237,4 +256,3 @@ namespace nekos {
         }
     }
 }
-

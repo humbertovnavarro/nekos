@@ -12,19 +12,16 @@ namespace nekos {
     size_t Console::_lineIndex = 0;
     LogCallback Console::_logCallbacks[MAX_LOG_CALLBACKS];
     int Console::_logCallbackCount = 0;
-    SemaphoreHandle_t logBufferMut;
     TaskHandle_t consoleLoopHandle;
 
     void consoleLoop(void* pvparams) {
         for(;;) {
             nekos::Console::poll();
-            vTaskDelay(1);
         }
     };
 
     void Console::begin(unsigned long baud) {
         Serial.begin(baud);
-        delay(100);
         const char* banner[] = {
         "      |\\---/|",
         "      | ,_, |",
@@ -41,7 +38,7 @@ namespace nekos {
         Serial.println();
         setEnv("CWD", "/");
         printPrompt();
-        xTaskCreate(consoleLoop, "consoleLoop", 8192, nullptr, 0, &consoleLoopHandle);
+        xTaskCreatePinnedToCore(consoleLoop, "consoleLoop", 8192, nullptr, 1, &consoleLoopHandle, 1);
     }
 
     int Console::getCommandCount() {
@@ -50,7 +47,20 @@ namespace nekos {
 
     void Console::printPrompt() {
         String ipStr = WiFi.localIP().toString();
-        Serial.printf("[%s@%s] %s > ", "nekos", ipStr.c_str(), getEnv("CWD"));
+
+        // ANSI color codes
+        const char* colorCat = "\033[35m";     // Magenta for the cat emoji
+        const char* colorIP = "\033[36m";      // Cyan for the IP
+        const char* colorCWD = "\033[33m";     // Yellow for CWD
+        const char* colorReset = "\033[0m";    // Reset to default
+
+        Serial.printf("%s[%s%s%s@%s%s%s] %s%s%s > %s",
+            colorCat,                 // color for [
+            colorCat, "🐱", colorReset,   // cat emoji in magenta
+            colorIP, ipStr.c_str(), colorReset, // ip in cyan
+            colorCWD, getEnv("CWD"), colorReset, // cwd in yellow
+            colorReset                // reset at end
+        );
     }
 
     const char* Console::getCommandName(int index) {
@@ -105,20 +115,15 @@ namespace nekos {
 
     void Console::_dispatchLine(const char* line) {
         if (!line || line[0] == '\0') return;
-
         // Always start command output on a new line
         Serial.println(); 
-
         char buf[SHELL_INPUT_BUFFER_SIZE];
         strncpy(buf, line, sizeof(buf) - 1);
         buf[sizeof(buf) - 1] = '\0';
-
         char* saveptr = nullptr;
         char* cmd = strtok_r(buf, " ", &saveptr);
         char* args = strtok_r(nullptr, "", &saveptr);
-
         if (!cmd) return;
-
         for (int i = 0; i < _commandCount; ++i) {
             if (strcmp(cmd, _commands[i].name) == 0) {
                 char args_copy[SHELL_INPUT_BUFFER_SIZE] = {0};
@@ -130,13 +135,13 @@ namespace nekos {
                 return;
             }
         }
-
         logf("\n[ERROR] Unknown command: %s\nType 'help' for available commands.\n", cmd);
         printPrompt();
     }
 
     void Console::poll() {
         while (Serial.available() > 0) {
+            vTaskDelay(1);
             char c = (char)Serial.read();
             if (c == '\r') continue;
 
