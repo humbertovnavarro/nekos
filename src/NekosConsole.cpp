@@ -47,20 +47,7 @@ namespace nekos {
 
     void Console::printPrompt() {
         String ipStr = WiFi.localIP().toString();
-
-        // ANSI color codes
-        const char* colorCat = "\033[35m";     // Magenta for the cat emoji
-        const char* colorIP = "\033[36m";      // Cyan for the IP
-        const char* colorCWD = "\033[33m";     // Yellow for CWD
-        const char* colorReset = "\033[0m";    // Reset to default
-
-        Serial.printf("%s[%s%s%s@%s%s%s] %s%s%s > %s",
-            colorCat,                 // color for [
-            colorCat, "🐱", colorReset,   // cat emoji in magenta
-            colorIP, ipStr.c_str(), colorReset, // ip in cyan
-            colorCWD, getEnv("CWD"), colorReset, // cwd in yellow
-            colorReset                // reset at end
-        );
+        Serial.printf("[%s]=> ", ipStr);
     }
 
     const char* Console::getCommandName(int index) {
