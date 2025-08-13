@@ -1,8 +1,9 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
-#include <WiFi.h> 
 #include "NekosConsole.h"
+#include "Arduino.h"
+
 namespace nekos {
     // Define static members
     Console::EnvVar Console::_envVars[Console::MAX_ENV_VARS] = {};
@@ -10,7 +11,6 @@ namespace nekos {
     int Console::_commandCount = 0;
     char Console::_lineBuf[Console::SHELL_INPUT_BUFFER_SIZE] = {};
     size_t Console::_lineIndex = 0;
-    LogCallback Console::_logCallbacks[MAX_LOG_CALLBACKS];
     int Console::_logCallbackCount = 0;
     TaskHandle_t consoleLoopHandle;
 
@@ -46,21 +46,12 @@ namespace nekos {
     }
 
     void Console::printPrompt() {
-        String ipStr = WiFi.localIP().toString();
-        Serial.printf("[%s]=> ", ipStr);
+        Serial.printf("[%s]=> ", "🐈");
     }
 
     const char* Console::getCommandName(int index) {
         if (index < 0 || index >= _commandCount) return nullptr;
         return _commands[index].name;
-    }
-
-    bool Console::registerLogCallback(LogCallback cb) {
-        if (!cb) return false;
-        if(_logCallbackCount >= MAX_LOG_CALLBACKS) return false;
-        _logCallbacks[_logCallbackCount] = cb;
-        _logCallbackCount++;
-        return true;
     }
 
     bool Console::registerCommand(const char* name, CommandCallback cb) {
@@ -93,10 +84,6 @@ namespace nekos {
         va_start(args, fmt);
         vsnprintf(buf, sizeof(buf), fmt, args);
         va_end(args);
-        for(int i = 0; i < Console::_logCallbackCount; i++) {
-            _logCallbacks[i](buf);
-        }
-        // Always print to serial.
         Serial.println(buf);
     }
 

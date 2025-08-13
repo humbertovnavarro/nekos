@@ -1,7 +1,6 @@
 #include "FreeRTOS.h"
 
 namespace nekos {
-    using LogCallback = void(*)(const char* buf);
     using CommandCallback = void(*)(const char* args);
     class Console {
     public:
@@ -29,7 +28,6 @@ namespace nekos {
         static bool setEnv(const char* name, const char* value);
         static const char* getEnv(const char* name);
         static bool unsetEnv(const char* name);
-        static bool registerLogCallback(LogCallback cb);
     private:
         struct Command {
             char name[32];
@@ -49,7 +47,6 @@ namespace nekos {
         static Command _commands[MAX_COMMANDS];
         static int _commandCount;
         static EnvVar _envVars[MAX_ENV_VARS];
-        static LogCallback _logCallbacks[MAX_LOG_CALLBACKS];
         static int _logCallbackCount;
     };
 }
