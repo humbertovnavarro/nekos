@@ -17,6 +17,7 @@ namespace nekos {
         static constexpr int MAX_ENV_NAME_LEN = 32;
         static constexpr int MAX_ENV_VALUE_LEN = 64;
         static constexpr int MAX_LOG_CALLBACKS = 64;
+        static void exec(const char* command, const char* args);
         // Initialize serial console at given baud rate
         static void begin(unsigned long baud = 115200);
         // Call repeatedly in your loop()

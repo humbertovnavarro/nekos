@@ -3,10 +3,12 @@
 #include "NekosFS.h"
 #include "NekosNet.h"
 #include "Arduino.h"
+#include "NekosArgParse.h"
+
 namespace nekos {
     void registerCoreUtils() {
 
-        Console::registerCommand("help", [](const char* args){
+        Console::registerCommand("help", [](const char* args) {
             Console::log("Available commands:");
             int count = Console::getCommandCount();
             for (int i = 0; i < count; i++) {
@@ -16,47 +18,33 @@ namespace nekos {
                 }
             }
         });
-        
-        Console::registerCommand("heap", [](const char* args){
+
+        Console::registerCommand("heap", [](const char*) {
             size_t freeHeap = xPortGetFreeHeapSize();
             size_t minHeap = xPortGetMinimumEverFreeHeapSize();
             Console::logf("Free Heap: %u bytes", (unsigned)freeHeap);
             Console::logf("Min Ever Free Heap: %u bytes", (unsigned)minHeap);
         });
 
-        Console::registerCommand("uptime", [](const char* args){
+        Console::registerCommand("uptime", [](const char*) {
             uint64_t ms = esp_timer_get_time() / 1000;
             uint64_t seconds = ms / 1000;
             uint64_t minutes = seconds / 60;
             uint64_t hours = minutes / 60;
             Console::logf("Uptime: %llu hours, %llu minutes, %llu seconds",
-                        hours, minutes % 60, seconds % 60);
-        });
-
-        Console::registerCommand("ls", [](const char* args) {
-            const char* cwd = Console::getEnv("CWD");
-            char path[256];
-            if (!args || strlen(args) == 0) {
-                if (cwd && cwd[0] != '\0') {
-                    strncpy(path, cwd, sizeof(path));
-                    path[sizeof(path)-1] = '\0';
-                } else {
-                    strncpy(path, "/", sizeof(path));
-                }
-            } else {
-                nekos::fs::joinPath(cwd, args, path, sizeof(path));
-            }
-            nekos::fs::listDir(path);
+                          hours, minutes % 60, seconds % 60);
         });
 
         Console::registerCommand("cat", [](const char* args) {
-            if (!args || strlen(args) == 0) {
-                Console::log("Usage: cat <file>");
+            NekosArgParse parser;
+            parser.addArgument("file", true, "", "File to read");
+            if (!parser.parse(args)) {
+                Console::log(parser.usage("cat").c_str());
                 return;
             }
             const char* cwd = Console::getEnv("CWD");
             char path[256];
-            nekos::fs::joinPath(cwd, args, path, sizeof(path));
+            nekos::fs::joinPath(cwd, parser.get("file"), path, sizeof(path));
 
             String content = nekos::fs::readFile(path);
             if (content.length() == 0) {
@@ -67,13 +55,15 @@ namespace nekos {
         });
 
         Console::registerCommand("rm", [](const char* args) {
-            if (!args || strlen(args) == 0) {
-                Console::log("Usage: rm <file>");
+            NekosArgParse parser;
+            parser.addArgument("file", true, "", "File to delete");
+            if (!parser.parse(args)) {
+                Console::log(parser.usage("rm").c_str());
                 return;
             }
             const char* cwd = Console::getEnv("CWD");
             char path[256];
-            nekos::fs::joinPath(cwd, args, path, sizeof(path));
+            nekos::fs::joinPath(cwd, parser.get("file"), path, sizeof(path));
 
             if (nekos::fs::deleteFile(path)) {
                 Console::logf("[rm] Deleted: %s", path);
@@ -83,13 +73,15 @@ namespace nekos {
         });
 
         Console::registerCommand("touch", [](const char* args) {
-            if (!args || strlen(args) == 0) {
-                Console::log("Usage: touch <file>");
+            NekosArgParse parser;
+            parser.addArgument("file", true, "", "File to create/update");
+            if (!parser.parse(args)) {
+                Console::log(parser.usage("touch").c_str());
                 return;
             }
             const char* cwd = Console::getEnv("CWD");
             char path[256];
-            nekos::fs::joinPath(cwd, args, path, sizeof(path));
+            nekos::fs::joinPath(cwd, parser.get("file"), path, sizeof(path));
 
             if (nekos::fs::touchFile(path)) {
                 Console::logf("[touch] File created/updated: %s", path);
@@ -99,32 +91,19 @@ namespace nekos {
         });
 
         Console::registerCommand("echo", [](const char* args) {
-            if (!args || strlen(args) == 0) {
+            NekosArgParse parser;
+            parser.addArgument("text", true, "", "Text to write");
+            parser.addArgument("file", true, "", "Output file");
+            if (!parser.parse(args)) {
                 Console::log("Usage: echo <text> > <file>");
-                return;
-            }
-
-            const char* redirect = strstr(args, ">");
-            if (!redirect) {
-                Console::log("Usage: echo <text> > <file>");
-                return;
-            }
-
-            String text = String(args, redirect - args);
-            text.trim();
-            String file = String(redirect + 1);
-            file.trim();
-
-            if (file.length() == 0) {
-                Console::log("No output file specified.");
                 return;
             }
 
             const char* cwd = Console::getEnv("CWD");
             char path[256];
-            nekos::fs::joinPath(cwd, file.c_str(), path, sizeof(path));
+            nekos::fs::joinPath(cwd, parser.get("file"), path, sizeof(path));
 
-            if (fs::writeFile(path, text + "\n")) {
+            if (fs::writeFile(path, String(parser.get("text")) + "\n")) {
                 Console::logf("[echo] Wrote to %s", path);
             } else {
                 Console::logf("[echo] Failed to write to %s", path);
@@ -132,14 +111,15 @@ namespace nekos {
         });
 
         Console::registerCommand("mkdir", [](const char* args) {
-            if (!args || strlen(args) == 0) {
-                Console::log("Usage: mkdir <directory>");
+            NekosArgParse parser;
+            parser.addArgument("dir", true, "", "Directory to create");
+            if (!parser.parse(args)) {
+                Console::log(parser.usage("mkdir").c_str());
                 return;
             }
             const char* cwd = Console::getEnv("CWD");
             char path[256];
-            
-            nekos::fs::joinPath(cwd, args, path, sizeof(path));
+            nekos::fs::joinPath(cwd, parser.get("dir"), path, sizeof(path));
 
             if (nekos::fs::makeDir(path)) {
                 Console::logf("[mkdir] Created path: %s", path);
@@ -149,15 +129,17 @@ namespace nekos {
         });
 
         Console::registerCommand("cd", [](const char* args) {
-            if (!args || strlen(args) == 0) {
-                Console::log("Usage: cd <directory>");
+            NekosArgParse parser;
+            parser.addArgument("dir", true, "", "Directory to change into");
+            if (!parser.parse(args)) {
+                Console::log(parser.usage("cd").c_str());
                 return;
             }
             const char* cwd = Console::getEnv("CWD");
             char newPath[256];
-            nekos::fs::joinPath(cwd, args, newPath, sizeof(newPath));
-            // Check if newPath is a directory (you may need to implement fs::isDir)
-            if (nekos::fs::isDir(newPath)) {  // assuming listDir returns true if path exists and is directory
+            nekos::fs::joinPath(cwd, parser.get("dir"), newPath, sizeof(newPath));
+
+            if (nekos::fs::isDir(newPath)) {
                 if (Console::setEnv("CWD", newPath)) {
                     Console::logf("Changed directory to: %s", newPath);
                 } else {
@@ -167,26 +149,28 @@ namespace nekos {
                 Console::logf("Directory not found: %s", newPath);
             }
         });
-        
-        Console::registerCommand("wifi_connect", [](const char* args){
-        char ssid[64], pass[64];
-        if (sscanf(args, "%63s %63s", ssid, pass) == 2) {
-            if (nekos::net::wifiConnect(ssid, pass)) {
-                Console::log("WiFi connected successfully.");
-            } else {
-                Console::log("Failed to connect to WiFi.");
+
+        Console::registerCommand("wifi_connect", [](const char* args) {
+            NekosArgParse parser;
+            parser.addArgument("ssid", true, "", "WiFi SSID");
+            parser.addArgument("password", true, "", "WiFi password");
+            parser.addArgument("hidden", false, "", "Set if network is hidden", true);
+            if (!parser.parse(args)) {
+                Console::log(parser.usage("wifi_connect").c_str());
+                return;
             }
-        } else {
-            Console::log("Usage: wifi_connect <SSID> <PASSWORD>");
-        }
+            Console::logf("SSID: '%s'", parser.get("ssid"));
+            Console::logf("Password: '%s'", parser.get("password"));
+            Console::logf("Hidden: %d", parser.getFlag("hidden"));
+            nekos::net::wifiConnect(parser.get("ssid"), parser.get("password"));
         });
 
-        Console::registerCommand("wifi_disconnect", [](const char*){
+        Console::registerCommand("wifi_disconnect", [](const char*) {
             nekos::net::wifiDisconnect();
             Console::log("WiFi disconnected.");
         });
 
-        Console::registerCommand("wifi_status", [](const char*){
+        Console::registerCommand("wifi_status", [](const char*) {
             if (nekos::net::wifiIsConnected()) {
                 Console::logf("Connected. IP: %s", nekos::net::wifiGetLocalIP().c_str());
             } else {
@@ -194,124 +178,35 @@ namespace nekos {
             }
         });
 
-        Console::registerCommand("wifi_scan", [](const char*){
+        Console::registerCommand("wifi_scan", [](const char*) {
             nekos::net::wifiScanNetworks();
         });
 
-        Console::registerCommand("http_get", [](const char* args){
-            if (!args || strlen(args) == 0) {
-                Console::log("Usage: http_get <URL>");
+        Console::registerCommand("http_get", [](const char* args) {
+            NekosArgParse parser;
+            parser.addArgument("url", true, "", "Target URL");
+            if (!parser.parse(args)) {
+                Console::log(parser.usage("http_get").c_str());
                 return;
             }
-            String resp = nekos::net::httpGet(args);
+            String resp = nekos::net::httpGet(parser.get("url"));
             Console::log("HTTP GET Response:");
             Console::log(resp.c_str());
         });
 
-        Console::registerCommand("http_post", [](const char* args){
-            char url[128];
-            char json[256];
-            if (sscanf(args, "%127s %[^\n]", url, json) == 2) {
-                if (nekos::net::httpPostJSON(url, json)) {
-                    Console::log("POST successful.");
-                } else {
-                    Console::log("POST failed.");
-                }
-            } else {
-                Console::log("Usage: http_post <URL> <JSON_BODY>");
-            }
-        });    
-        
-        Console::registerCommand("wifi_connect", [](const char* args){
-            char ssid[64] = {0}, pass[64] = {0};
-            
-            // Try to parse two arguments: ssid and pass
-            int count = sscanf(args, "%63s %63s", ssid, pass);
-
-            if (count == 2) {
-                // Use given ssid and password
-                if (nekos::net::wifiConnect(ssid, pass)) {
-                    Console::log("WiFi connected successfully.");
-                } else {
-                    Console::log("Failed to connect to WiFi.");
-                }
-            } else if (count == 1) {
-                // Only one argument provided, check if length == 1 and it's a digit
-                size_t len = strlen(ssid);
-                if (len == 1 && isdigit(ssid[0])) {
-                    int idx = ssid[0] - '0';
-                    const char* env_ssid = Console::getEnv(String(idx).c_str());
-                    if (!env_ssid || !env_ssid[0]) {
-                        Console::log("No SSID found in environment at given index.");
-                        return;
-                    }
-                    // The rest of args after the first token is password
-                    // Move pointer forward after the first token (ssid)
-                    const char* pass_start = args + strlen(ssid);
-                    // Skip spaces
-                    while (*pass_start == ' ') pass_start++;
-
-                    if (*pass_start == '\0') {
-                        Console::log("Usage: wifi_connect <SSID> <PASSWORD> or wifi_connect <index> <PASSWORD>");
-                        return;
-                    }
-
-                    strncpy(pass, pass_start, sizeof(pass)-1);
-
-                    if (nekos::net::wifiConnect(env_ssid, pass)) {
-                        Console::log("WiFi connected successfully.");
-                    } else {
-                        Console::log("Failed to connect to WiFi.");
-                    }
-                } else {
-                    Console::log("Usage: wifi_connect <SSID> <PASSWORD> or wifi_connect <index> <PASSWORD>");
-                }
-            } else {
-                Console::log("Usage: wifi_connect <SSID> <PASSWORD> or wifi_connect <index> <PASSWORD>");
-            }
-        });
-
-
-        Console::registerCommand("wifi_disconnect", [](const char*){
-            nekos::net::wifiDisconnect();
-            Console::log("WiFi disconnected.");
-        });
-
-        Console::registerCommand("wifi_status", [](const char*){
-            if (nekos::net::wifiIsConnected()) {
-                Console::logf("Connected. IP: %s", nekos::net::wifiGetLocalIP().c_str());
-            } else {
-                Console::log("Not connected to WiFi.");
-            }
-        });
-
-        Console::registerCommand("wifi_scan", [](const char*){
-            nekos::net::wifiScanNetworks();
-        });
-
-        Console::registerCommand("http_get", [](const char* args){
-            if (!args || strlen(args) == 0) {
-                Console::log("Usage: http_get <URL>");
+        Console::registerCommand("http_post", [](const char* args) {
+            NekosArgParse parser;
+            parser.addArgument("url", true, "", "Target URL");
+            parser.addArgument("json", true, "", "JSON body");
+            if (!parser.parse(args)) {
+                Console::log(parser.usage("http_post").c_str());
                 return;
             }
-            String resp = nekos::net::httpGet(args);
-            Console::log("HTTP GET Response:");
-            Console::log(resp.c_str());
-        });
-
-        Console::registerCommand("http_post", [](const char* args){
-            char url[128];
-            char json[256];
-            if (sscanf(args, "%127s %[^\n]", url, json) == 2) {
-                if (nekos::net::httpPostJSON(url, json)) {
-                    Console::log("POST successful.");
-                } else {
-                    Console::log("POST failed.");
-                }
+            if (nekos::net::httpPostJSON(parser.get("url"), parser.get("json"))) {
+                Console::log("POST successful.");
             } else {
-                Console::log("Usage: http_post <URL> <JSON_BODY>");
+                Console::log("POST failed.");
             }
         });
-
     }
 }
