@@ -66,30 +66,21 @@ bool ArgParse::getFlag(const char* name) {
 }
 
 String ArgParse::usage(const char* progName) {
-    String out = "Usage: ";
+    String out = "";
     out += progName;
-    out += " ";
+    // List arguments in usage line
     for (auto& spec : argsOrder) {
         if (spec.isFlag) {
-            out += "[--" + spec.name + "] ";
+            out += " [--" + spec.name + "]";
         } else if (spec.required) {
-            out += "<" + spec.name + "> ";
+            out += " <" + spec.name + ">";
         } else {
-            out += "[" + spec.name + "] ";
+            out += " [" + spec.name + "]";
         }
-    }
-    out += "\n\nArguments:\n";
-    for (auto& spec : argsOrder) {
-        out += "  ";
-        if (spec.isFlag) out += "--";
-        out += spec.name + "\t" + spec.help;
-        if (spec.defaultValue.length()) {
-            out += " (default: " + spec.defaultValue + ")";
-        }
-        out += "\n";
     }
     return out;
 }
+
 
 std::vector<String> ArgParse::tokenize(const char* str) {
     std::vector<String> result;
