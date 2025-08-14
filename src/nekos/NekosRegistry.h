@@ -16,7 +16,7 @@ class Registry {
         Registry() = default;
         ~Registry() = default;
         static void initMutex();
-        static constexpr size_t MAX_ENTRIES = 512;      // adjust as needed
+        static constexpr size_t MAX_ENTRIES = 512;
         static constexpr size_t MAX_KEY_LEN = 16;
         static constexpr size_t MAX_VALUE_LEN = 64;
         static char keys[MAX_ENTRIES][MAX_KEY_LEN];
