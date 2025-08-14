@@ -54,6 +54,9 @@ namespace nekos {
                     sketchSizeKB, usedSketchPercent, freeSketchKB);
         Console::logf("Total heap: %u KB, Total flash for sketch: %u KB", 
                     totalHeapKB, sketchSizeKB + freeSketchKB);
+        if (psramFound()) {
+            Console::logf("\nPSRAM found! Size: %.2f MB\n", ESP.getPsramSize() / 1024.0 / 1024.0);
+        }
     #endif
     }
 
