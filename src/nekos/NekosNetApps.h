@@ -1,0 +1,3 @@
+namespace nekos {
+    void registerNetApps();
+}

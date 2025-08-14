@@ -1,27 +1,25 @@
 #pragma once
 #include <Arduino.h>
+#include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#define REGKEY_CWD "CWD"
 namespace nekos {
-
-class Registry {
+    class Registry {
     public:
-        static void set(const char* key, const char* value);
-        static const char* get(const char* key, const char* defaultValue = "");
-        static bool remove(const char* key);
-        static bool has(const char* key);
-        static void clear();
+        Registry() = default;
+        // Initialize registry memory and mutex
+        void init();
+        // Set or overwrite a key-value pair
+        bool set(const char* key, const char* value);
+        // Retrieve the value for a given key (nullptr if not found)
+        const char* get(const char* key);
+        // Check if a key exists
+        bool has(const char* key);
+        // Remove a key-value pair
+        bool remove(const char* key);
 
     private:
-        Registry() = default;
-        ~Registry() = default;
-        static void initMutex();
-        static constexpr size_t MAX_ENTRIES = 512;
-        static constexpr size_t MAX_KEY_LEN = 16;
-        static constexpr size_t MAX_VALUE_LEN = 64;
-        static char keys[MAX_ENTRIES][MAX_KEY_LEN];
-        static char values[MAX_ENTRIES][MAX_VALUE_LEN];
-        static size_t count;
         static SemaphoreHandle_t mutex;
+        static char* keys;
+        static char* values;
     };
 }

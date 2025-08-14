@@ -1,10 +1,11 @@
-#include "NekosConsole.h"
+#include "NekoShell.h"
 #include "NekosNet.h"
+#include "NekosAppRegistry.h"
 namespace nekos {
-    void registerNetCommands() {
-        Console::commands.registerCommand("wifi_connect", [](Command* cmd) {
-            const char* ssid = cmd->args.get("ssid");
-            const char* password = cmd->args.get("password");
+    void registerNetApps() {
+        AppRegistry::registerApp("wifi_connect", [](App* app) {
+            const char* ssid = app->args.get("ssid");
+            const char* password = app->args.get("password");
             if (net::wifiConnect(ssid, password)) {
                 Console::logf("WiFi connected: %s\n", ssid);
                 Console::logf("IP: %s\n", net::wifiGetLocalIP().c_str());
@@ -15,13 +16,13 @@ namespace nekos {
           ->addArgument("password", true);
 
         // Disconnect WiFi
-        Console::commands.registerCommand("wifi_disconnect", [](Command* cmd) {
+        AppRegistry::registerApp("wifi_disconnect", [](App* app) {
             net::wifiDisconnect();
             Console::log("WiFi disconnected.\n");
         });
 
         // WiFi status
-        Console::commands.registerCommand("wifi_status", [](Command* cmd) {
+        AppRegistry::registerApp("wifi_status", [](App* app) {
             if (net::wifiIsConnected()) {
                 Console::logf("Connected. IP: %s\n", net::wifiGetLocalIP().c_str());
             } else {
@@ -30,13 +31,13 @@ namespace nekos {
         });
 
         // Scan available networks
-        Console::commands.registerCommand("wifi_scan", [](Command* cmd) {
+        AppRegistry::registerApp("wifi_scan", [](App* app) {
             net::wifiScanNetworks();
         });
 
         // HTTP GET: http_get <url>
-        Console::commands.registerCommand("http_get", [](Command* cmd) {
-            const char* url = cmd->args.get("url");
+        AppRegistry::registerApp("http_get", [](App* app) {
+            const char* url = app->args.get("url");
             if (!url || strlen(url) == 0) {
                 Console::log("Usage: http_get <URL>\n");
                 return;
@@ -47,9 +48,9 @@ namespace nekos {
         })->args.addArgument("url", true);
 
         // HTTP POST JSON: http_post <url> <json>
-        Console::commands.registerCommand("http_post", [](Command* cmd) {
-            const char* url = cmd->args.get("url");
-            const char* json = cmd->args.get("json");
+        AppRegistry::registerApp("http_post", [](App* app) {
+            const char* url = app->args.get("url");
+            const char* json = app->args.get("json");
             if (!url || !json || strlen(url) == 0 || strlen(json) == 0) {
                 Console::log("Usage: http_post <URL> <JSON_BODY>\n");
                 return;

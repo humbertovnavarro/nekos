@@ -1,9 +1,10 @@
-#include "NekosConsole.h"
+#include "NekoShell.h"
 #include "NekosFS.h"
+#include "NekosAppRegistry.h"
 namespace nekos {
-    void registerFSCommands() {
-        Console::commands.registerCommand("rm", [](Command* cmd) {
-            const char* path = cmd->args.get("path");
+    void registerFSApps() {
+        AppRegistry::registerApp("rm", [](App* app) {
+            const char* path = app->args.get("path");
             if (fs::deleteFile(path)) {
                 Console::logf("[rm] Deleted: %s\n", path);
             } else {
@@ -11,8 +12,8 @@ namespace nekos {
             }
         })->args.addArgument("path", true);
 
-        Console::commands.registerCommand("touch", [](Command* cmd) {
-            const char* path = cmd->args.get("path");
+        AppRegistry::registerApp("touch", [](App* app) {
+            const char* path = app->args.get("path");
             if (fs::touchFile(path)) {
                 Console::logf("[touch] File created/updated: %s\n", path);
             } else {
@@ -20,9 +21,9 @@ namespace nekos {
             }
         })->args.addArgument("path", true);
 
-        Console::commands.registerCommand("echo", [](Command* cmd) {
-            const char* path = cmd->args.get("path");
-            const char* text = cmd->args.get("text");
+        AppRegistry::registerApp("echo", [](App* app) {
+            const char* path = app->args.get("path");
+            const char* text = app->args.get("text");
             if (fs::writeFile(path, text)) {
                 Console::logf("[echo] Wrote to %s\n", path);
             } else {
@@ -32,8 +33,8 @@ namespace nekos {
         ->args.addArgument("path", true)
         ->addArgument("text", true);
 
-        Console::commands.registerCommand("mkdir", [](Command* cmd) {
-            const char* path = cmd->args.get("path");
+        AppRegistry::registerApp("mkdir", [](App* app) {
+            const char* path = app->args.get("path");
             if (fs::makeDir(path)) {
                 Console::logf("[mkdir] Created path: %s\n", path);
             } else {
@@ -41,8 +42,8 @@ namespace nekos {
             }
         })->args.addArgument("path", true);
         
-        Console::commands.registerCommand("cat", [](Command* cmd) {
-            const char* path = cmd->args.get("path");
+        AppRegistry::registerApp("cat", [](App* app) {
+            const char* path = app->args.get("path");
             String content = fs::readFile(path);
             if (content.length() == 0) {
                 Console::logf("[cat] Cannot read file: %s\n", path);

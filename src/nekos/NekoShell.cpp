@@ -1,18 +1,12 @@
-#include <cstdarg>
-#include <cstdio>
-#include <cstring>
-#include "Arduino.h"
-#include "NekosCommandRegistry.h"
-#include "NekosConsole.h"
-
+#include "NekoShell.h"
+#include "NekosMemConfig.h"
+#include "NekosAppRegistry.h"
 namespace nekos
 {
     // Define static members
-    CommandRegistry commands = CommandRegistry();
     char Console::_lineBuf[SHELL_INPUT_BUFFER_SIZE] = {};
     size_t Console::_lineIndex = 0;
     TaskHandle_t consoleLoopHandle;
-
     void consoleLoop(void *pvparams)
     {
         for (;;)
@@ -25,7 +19,6 @@ namespace nekos
             vTaskDelay(portTICK_RATE_MS * 10);
         }
     }
-
     void Console::begin(unsigned long baud)
     {
         Serial.begin(baud);
@@ -63,7 +56,7 @@ namespace nekos
     {
         if (!fmt)
             return;
-        char buf[QUEUE_MSG_SIZE];
+        char buf[SHELL_QUEUE_MSG_SIZE];
         va_list args;
         va_start(args, fmt);
         vsnprintf(buf, sizeof(buf), fmt, args);
@@ -81,11 +74,11 @@ namespace nekos
         strncpy(buf, line, sizeof(buf) - 1);
         buf[sizeof(buf) - 1] = '\0';
         char *saveptr = nullptr;
-        char *cmd = strtok_r(buf, " ", &saveptr);
+        char *app = strtok_r(buf, " ", &saveptr);
         char *args = strtok_r(nullptr, "", &saveptr);
-        if (!cmd)
+        if (!app)
             return;
-        Console::commands.executeCommand(cmd, args);
+        AppRegistry::executeApp(app, args);
         printPrompt();
     }
 

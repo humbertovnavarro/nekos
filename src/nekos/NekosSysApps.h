@@ -1,17 +1,14 @@
-#include "NekosConsole.h"
-#include "NekosEventBus.h"
-#include "NekoCompat.h"
+#include "NekoShell.h"
 #include <Wire.h>
-
 #ifdef NEOPIXEL_PIN
-#include <Adafruit_NeoPixel.h>
-Adafruit_NeoPixel pixel(1, NEOPIXEL_PIN);
+    #include <Adafruit_NeoPixel.h>
+    Adafruit_NeoPixel pixel(1, NEOPIXEL_PIN);
 #endif
 #ifdef HAS_WIFI
-#include "WiFi.h"
+    #include "WiFi.h"
 #endif
 
-
+#include "NekosAppRegistry.h"
 
 namespace nekos {
     void printVendorInfo() {
@@ -36,7 +33,6 @@ namespace nekos {
     }
 
     void printMemoryStats() {
-    #ifdef ESP32
         size_t freeHeapKB = ESP.getFreeHeap() / 1024;
         size_t minHeapKB = ESP.getMinFreeHeap() / 1024;
         size_t totalHeapKB = ESP.getHeapSize() / 1024;
@@ -57,20 +53,18 @@ namespace nekos {
         if (psramFound()) {
             Console::logf("\nPSRAM found! Size: %.2f MB\n", ESP.getPsramSize() / 1024.0 / 1024.0);
         }
-    #endif
     }
 
-
-    void registerSysCommands() {
+    void registerSysApps() {
     #ifdef NEOPIXEL_PIN
         pixel.begin();
         pixel.setBrightness(0);
-        Console::commands.registerCommand("neopixel_set", [](Command* cmd) {
-            int led = atoi(cmd->args.get("led"));
-            int r = atoi(cmd->args.get("r"));
-            int g = atoi(cmd->args.get("g"));
-            int b = atoi(cmd->args.get("b"));
-            int i = atoi(cmd->args.get("i"));
+        AppRegistry::registerApp("neopixel_set", [](App* app) {
+            int led = atoi(app->args.get("led"));
+            int r = atoi(app->args.get("r"));
+            int g = atoi(app->args.get("g"));
+            int b = atoi(app->args.get("b"));
+            int i = atoi(app->args.get("i"));
             pixel.setPixelColor(led, pixel.Color(r, g, b));
             pixel.setBrightness(i);
             pixel.show();
@@ -82,28 +76,26 @@ namespace nekos {
         ->addArgument("i", false, "20", "intensity (0-255)");
     #endif
 
-    Console::commands.registerCommand("heap", [](Command* cmd) {
+    AppRegistry::registerApp("heap", [](App* app) {
         size_t freeHeap = xPortGetFreeHeapSize();
         size_t minHeap = xPortGetMinimumEverFreeHeapSize();
         Console::logf("Free Heap: %u bytes\n", (unsigned)freeHeap);
         Console::logf("Min Ever Free Heap: %u bytes\n", (unsigned)minHeap);
     });
 
-    Console::commands.registerCommand("help", [](Command* cmd) {
-            for (auto& [cmdName, cmdPtr] : Console::commands.commandMap) {
-                String usageStr = cmdPtr->args.usage(cmdName.c_str());
+    AppRegistry::registerApp("help", [](App* app) {
+            for(int i = 0; i < AppRegistry::appCount; i++) {
+                if(AppRegistry::apps[i] == nullptr) {
+                    break;
+                }
+                String usage = AppRegistry::apps[i]->args.usage(app->name.c_str());
+
+                String usageStr = AppRegistry::apps[i]->args.usage(app->name.c_str());
                 Console::logf("%s\n", usageStr.c_str());
             }
     });
 
-    Console::commands.registerCommand("reboot", [](Command* cmd) {
-        EventBus::publish(Topic::REBOOT);
-        fflush(stdout);
-        vTaskDelay(REBOOT_IN_MS);
-        REBOOT();
-    });
-
-    Console::commands.registerCommand("i2c_scan", [](Command* cmd) {
+    AppRegistry::registerApp("i2c_scan", [](App* app) {
         Console::log("Scanning I2C bus...\n");
         for (uint8_t addr = 1; addr < 127; addr++) {
             Wire.beginTransmission(addr);
@@ -113,7 +105,7 @@ namespace nekos {
         }
     });
 
-    Console::commands.registerCommand("lshw", [](Command* cmd) {
+    AppRegistry::registerApp("lshw", [](App* app) {
         Console::log("=== Hardware Info ===");
         Console::log("Board: " ARDUINO_BOARD);
         Console::log("Variant: " ARDUINO_VARIANT);

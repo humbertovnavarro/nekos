@@ -1,3 +1,0 @@
-namespace nekos {
-    void registerFSCommands();
-}
