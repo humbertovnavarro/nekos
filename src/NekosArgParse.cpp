@@ -1,14 +1,15 @@
 #include "NekosArgParse.h"
-
-void NekosArgParse::addArgument(const char* name, bool required,
+namespace nekos {
+ArgParse* ArgParse::addArgument(const char* name, bool required,
                                 const char* defaultValue,
                                 const char* help,
                                 bool isFlag) {
     ArgSpec spec = { name, required, defaultValue, help, isFlag };
     argsOrder.push_back(spec);
+    return this;
 }
 
-bool NekosArgParse::parse(const char* input) {
+bool ArgParse::parse(const char* input) {
     values.clear();
     std::vector<String> tokens = tokenize(input);
     size_t i = 0;
@@ -53,18 +54,18 @@ bool NekosArgParse::parse(const char* input) {
     return true;
 }
 
-const char* NekosArgParse::get(const char* name) {
+const char* ArgParse::get(const char* name) {
     auto it = values.find(name);
     if (it != values.end()) return it->second.c_str();
     return "";
 }
 
-bool NekosArgParse::getFlag(const char* name) {
+bool ArgParse::getFlag(const char* name) {
     auto it = values.find(name);
     return (it != values.end() && it->second == "true");
 }
 
-String NekosArgParse::usage(const char* progName) {
+String ArgParse::usage(const char* progName) {
     String out = "Usage: ";
     out += progName;
     out += " ";
@@ -90,63 +91,27 @@ String NekosArgParse::usage(const char* progName) {
     return out;
 }
 
-std::vector<String> NekosArgParse::tokenize(const char* str) {
+std::vector<String> ArgParse::tokenize(const char* str) {
     std::vector<String> result;
-    String token;
-    bool inQuotes = false;
-    char quoteChar = '\0';
-    bool escape = false;
-
-    for (const char* p = str; *p; ++p) {
-        char c = *p;
-
-        if (escape) {
-            token += c;       // Add char literally
-            escape = false;
-            continue;
+    String s(str);
+    int start = 0;
+    while (true) {
+        int idx = s.indexOf(' ', start);
+        if (idx == -1) {
+            if (start < s.length()) result.push_back(s.substring(start));
+            break;
         }
-
-        if (c == '\\') {      // Start escape sequence
-            escape = true;
-            continue;
-        }
-
-        if (inQuotes) {
-            if (c == quoteChar) {
-                inQuotes = false; // End of quoted token
-            } else {
-                token += c;
-            }
-            continue;
-        }
-
-        if (c == '"' || c == '\'') {
-            inQuotes = true;
-            quoteChar = c;
-            continue;
-        }
-
-        if (c == ' ' || c == '\t') {
-            if (token.length()) {
-                result.push_back(token);
-                token = "";
-            }
-            continue;
-        }
-
-        token += c;
+        if (idx > start) result.push_back(s.substring(start, idx));
+        start = idx + 1;
     }
-
-    if (token.length()) {
-        result.push_back(token);
-    }
-
     return result;
 }
 
-NekosArgParse::ArgSpec* NekosArgParse::findSpec(const String& name) {
+ArgParse::ArgSpec* ArgParse::findSpec(const String& name) {
     for (auto& spec : argsOrder) {
         if (spec.name == name) return &spec;
     }
     return nullptr;
+}
+
 }

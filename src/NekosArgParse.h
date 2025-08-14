@@ -2,7 +2,9 @@
 #include <Arduino.h>
 #include <map>
 #include <vector>
-class NekosArgParse {
+
+namespace nekos {
+class ArgParse {
 public:
     struct ArgSpec {
         String name;
@@ -11,7 +13,7 @@ public:
         String help;
         bool isFlag;
     };
-    void addArgument(const char* name, bool required = false,
+    ArgParse* addArgument(const char* name, bool required = false,
                      const char* defaultValue = "",
                      const char* help = "",
                      bool isFlag = false);
@@ -23,6 +25,9 @@ public:
 private:
     std::vector<ArgSpec> argsOrder;
     std::map<String, String> values;
+
     std::vector<String> tokenize(const char* str);
     ArgSpec* findSpec(const String& name);
 };
+
+}

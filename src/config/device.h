@@ -16,6 +16,7 @@
     #define MENU_PREV_PIN 9
     #define MENU_HOME_PIN 11
     #define BAUD 921600
+    #define THREADS 2
 #endif
 
 #ifdef HELTEC_LORA_V3
