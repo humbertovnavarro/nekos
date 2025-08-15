@@ -32,6 +32,20 @@ jobs:
       - name: Build all PlatformIO environments
         run: pio run
 
+      - name: Rename firmware files to include environment name
+        run: |
+          for dir in .pio/build/*; do
+            if [ -d "$dir" ]; then
+              envname=$(basename "$dir")
+              if [ -f "$dir/firmware.bin" ]; then
+                mv "$dir/firmware.bin" "$dir/${envname}.bin"
+              fi
+              if [ -f "$dir/firmware.elf" ]; then
+                mv "$dir/firmware.elf" "$dir/${envname}.elf"
+              fi
+            fi
+          done
+
       - name: Upload all firmware to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
