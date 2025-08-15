@@ -1,6 +1,6 @@
 #pragma once
 #include <Arduino.h>
-#include "freertos/semphr.h"
+#include "semphr.h"
 #define REGKEY_CWD "CWD"
 namespace nekos {
 

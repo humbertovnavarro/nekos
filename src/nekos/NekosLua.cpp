@@ -6,8 +6,8 @@ extern "C" {
 #include "Arduino.h"
 #include "NekosLua.h"
 #include <Wire.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+#include "FreeRTOS.h"
+#include "task.h"
 struct LuaTaskData {
     lua_State* L;
     int ref; // Lua function reference
