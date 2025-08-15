@@ -3,20 +3,15 @@ extern "C" {
 #include "lualib.h"
 #include "lauxlib.h"
 }
-#include "U8g2lib.h"
 #include "Arduino.h"
 #include "NekosLua.h"
 #include <Wire.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "NekosFrameBuffer.h"
 struct LuaTaskData {
     lua_State* L;
     int ref; // Lua function reference
 };
-
-bool ownsDisplay = false;
-U8G2 display;
 
 namespace nekos {
 
@@ -182,64 +177,6 @@ namespace nekos {
         return 0;
     }
 
-    static int luaU8g2Begin(lua_State* L) {
-        display = takeDisplay();
-        lua_pushboolean(L, true);
-        return 1;
-    }
-
-    static int luaU8g2Close(lua_State* L) {
-        releaseDisplay();
-        lua_pushboolean(L, true);
-        return 1;
-    }
-
-
-    static int luaU8g2ClearBuffer(lua_State* L) {
-        display.clearBuffer();
-        return 0;
-    }
-
-    static int luaU8g2SendBuffer(lua_State* L) {
-        display.sendBuffer();
-        return 0;
-    }
-
-    static int luaU8g2DrawStr(lua_State* L) {
-        int x = luaL_checkinteger(L, 1);
-        int y = luaL_checkinteger(L, 2);
-        const char* str = luaL_checkstring(L, 3);
-        display.drawStr(x, y, str);
-        return 0;
-    }
-
-    static int luaU8g2SetFont(lua_State* L) {
-        const char* fontName = luaL_checkstring(L, 1);
-        // Example: only simple font mapping, extend as needed
-        if (strcmp(fontName, "u8g2_font_ncenB08_tr") == 0) {
-            display.setFont(u8g2_font_ncenB08_tr);
-        }
-        return 0;
-    }
-
-    static int luaU8g2DrawBox(lua_State* L) {
-        int x = luaL_checkinteger(L, 1);
-        int y = luaL_checkinteger(L, 2);
-        int w = luaL_checkinteger(L, 3);
-        int h = luaL_checkinteger(L, 4);
-        display.drawBox(x, y, w, h);
-        return 0;
-    }
-
-    static int luaU8g2DrawFrame(lua_State* L) {
-        int x = luaL_checkinteger(L, 1);
-        int y = luaL_checkinteger(L, 2);
-        int w = luaL_checkinteger(L, 3);
-        int h = luaL_checkinteger(L, 4);
-        display.drawFrame(x, y, w, h);
-        return 0;
-    }
-
     void luaExec(const char* script) {
         lua_State* L = luaL_newstate();
         luaL_openlibs(L);
@@ -264,15 +201,6 @@ namespace nekos {
         // Constants
         registerArduinoConstants(L);
         registerI2CConstants(L);
-        // u8g2
-        registerFunction(L, "u8g2Begin", luaU8g2Begin);
-        registerFunction(L, "u8g2ClearBuffer", luaU8g2ClearBuffer);
-        registerFunction(L, "u8g2SendBuffer", luaU8g2SendBuffer);
-        registerFunction(L, "u8g2DrawStr", luaU8g2DrawStr);
-        registerFunction(L, "u8g2SetFont", luaU8g2SetFont);
-        registerFunction(L, "u8g2DrawBox", luaU8g2DrawBox);
-        registerFunction(L, "u8g2DrawFrame", luaU8g2DrawFrame);
-
         if (luaL_dostring(L, script) != LUA_OK) {
             Serial.printf("Lua Error: %s\n", lua_tostring(L, -1));
         }

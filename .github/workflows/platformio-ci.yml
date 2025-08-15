@@ -1,9 +1,9 @@
-name: PlatformIO CI
+name: PlatformIO Build & Release
 
 on:
   push:
     tags:
-      - "v*" 
+      - "v*"
 
 jobs:
   build:
@@ -26,13 +26,14 @@ jobs:
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
 
-      - name: Build PlatformIO Project
+      - name: Build all PlatformIO environments
         run: pio run
 
-      - name: Upload binaries to release
+      - name: Upload all firmware to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
             .pio/build/*/*.bin
+            .pio/build/*/*.elf
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
