@@ -1,5 +1,4 @@
 #include "NekosConsole.h"
-#include "NekosEventBus.h"
 #include "NekoCompat.h"
 #include "NekosLua.h"
 #include <Wire.h>
@@ -100,7 +99,6 @@ namespace nekos {
     });
 
     Console::commands.registerCommand("reboot", [](Command* cmd, const char* args) {
-        EventBus::publish(Topic::REBOOT);
         fflush(stdout);
         vTaskDelay(REBOOT_IN_MS);
         REBOOT();

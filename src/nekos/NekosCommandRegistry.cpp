@@ -2,10 +2,10 @@
 #include "NekosCommandRegistry.h"
 #include "NekosConsole.h"
 #include "NekosArgParse.h"
-#include "NekosEventBus.h"
+#include "Arduino.h"
 namespace nekos
 {
-    std::map<std::string, std::unique_ptr<Command>> CommandRegistry::commandMap;
+    std::map<String, std::unique_ptr<Command>> CommandRegistry::commandMap;
     Command* CommandRegistry::registerCommand(
         const char* name,
         std::function<void(Command *cmd, const char* args)> cb
@@ -13,7 +13,6 @@ namespace nekos
     {
         Command *c = new Command(name, cb);
         commandMap[name] = std::unique_ptr<Command>(c);
-        c->topicQueue = xQueueCreate(NEKOS_STDIO_BUFFER_COUNT, sizeof(Topic));
         c->inQueue = xQueueCreate(NEKOS_STDIO_BUFFER_COUNT, sizeof(char[NEKOS_STDIO_NUM_CHARS]));
         c->outQueue = xQueueCreate(NEKOS_STDIO_BUFFER_COUNT, sizeof(char[NEKOS_STDIO_NUM_CHARS]));
         Console::logf("😸 registered command [%s]", name);
