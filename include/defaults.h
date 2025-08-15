@@ -1,0 +1,16 @@
+#ifdef ESP32
+    #define NEKOS_NEKOS_HAS_WIFI
+#endif
+#define NEKOS_DISPLAY "NONE"
+#define NEKOS_REBOOT_IN_MS 1000
+#define NEKOS_STDIO_NUM_CHARS 12
+#define NEKOS_STDIO_BUFFER_COUNT 5
+#define NEKOS_COMMAND_REGISTRY_TABLE_SIZE 32
+// #define MENU_SELECT_PIN
+// #define MENU_NEXT_PIN
+// #define MENU_PREV_PIN
+// #define MENU_SELECT_PIN
+// #define GPIO_CLK
+// #define GPIO_DATA
+// #define GPIO_RESET
+// #define NEKOS_HAS_WIFI

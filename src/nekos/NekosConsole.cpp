@@ -4,7 +4,7 @@
 #include "Arduino.h"
 #include "NekosCommandRegistry.h"
 #include "NekosConsole.h"
-
+#include "FreeRTOS.h"
 namespace nekos
 {
     // Define static members

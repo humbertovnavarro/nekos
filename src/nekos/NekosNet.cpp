@@ -1,3 +1,4 @@
+#ifdef NEKOS_HAS_WIFI
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include "NekosNet.h"
@@ -115,3 +116,4 @@ namespace nekos {
         }
     }
 }
+#endif

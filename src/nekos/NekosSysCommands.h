@@ -1,14 +1,8 @@
+#include "defaults.h"
 #include "NekosConsole.h"
-#include "NekosEventBus.h"
-#include "NekoCompat.h"
 #include "NekosLua.h"
-#include <Wire.h>
 
-#ifdef NEOPIXEL_PIN
-#include <Adafruit_NeoPixel.h>
-Adafruit_NeoPixel pixel(1, NEOPIXEL_PIN);
-#endif
-#ifdef HAS_WIFI
+#ifdef NEKOS_HAS_WIFI
 #include "WiFi.h"
 #endif
 
@@ -29,7 +23,7 @@ namespace nekos {
     }
 
     void printNetworkInfo() {
-        #ifdef HAS_WIFI
+        #ifdef NEKOS_HAS_WIFI
             Console::logf("WiFi MAC: %s\n", WiFi.macAddress().c_str());
         #endif
     }
@@ -92,36 +86,27 @@ namespace nekos {
         Console::logf("Min Ever Free Heap: %u bytes\n", (unsigned)minHeap);
     });
 
-    Console::commands.registerCommand("help", [](Command* cmd, const char* args) {
-            for (auto& [cmdName, cmdPtr] : Console::commands.commandMap) {
-                String usageStr = cmdPtr->args.usage(cmdName.c_str());
-                Console::logf("%s\n", usageStr.c_str());
-            }
-    });
-
-    Console::commands.registerCommand("reboot", [](Command* cmd, const char* args) {
-        EventBus::publish(Topic::REBOOT);
-        fflush(stdout);
-        vTaskDelay(REBOOT_IN_MS);
-        REBOOT();
-    });
-
-    Console::commands.registerCommand("i2c_scan", [](Command* cmd, const char* args) {
-        Console::log("Scanning I2C bus...\n");
-        for (uint8_t addr = 1; addr < 127; addr++) {
-            Wire.beginTransmission(addr);
-            if (Wire.endTransmission() == 0) {
-                Console::logf("Found device at 0x%02X\n", addr);
-            }
-        }
-    });
+    // Console::commands.registerCommand("help", [](Command* cmd, const char* args) {
+    //         for (auto& [cmdName, cmdPtr] : Console::commands.commandMap) {
+    //             String usageStr = cmdPtr->args.usage(cmdName.c_str());
+    //             Console::logf("%s\n", usageStr.c_str());
+    //         }
+    // });
 
     Console::commands.registerCommand("lshw", [](Command* cmd, const char* args) {
         Console::log("=== Hardware Info ===");
+        #ifdef ARDUINO_BOARD
         Console::log("Board: " ARDUINO_BOARD);
+        #endif
+        #ifdef ARDUINO_VARIANT
         Console::log("Variant: " ARDUINO_VARIANT);
+        #endif
+        #ifdef F_CPU
         Console::logf("CPU: %lu MHz\n", F_CPU / 1000000);
+        #endif
+        #ifdef ARDUINO
         Console::logf("Arduino API: %ld\n", ARDUINO);
+        #endif
         printMemoryStats();
         printVendorInfo();
         printNetworkInfo();
@@ -131,6 +116,5 @@ namespace nekos {
         Console::logf("Free RAM: %d bytes\n", freeRam());
     #endif
     });
-
     }
 }

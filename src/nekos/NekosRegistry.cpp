@@ -1,5 +1,5 @@
 #include "NekosRegistry.h"
-
+#include "FreeRTOS.h"
 namespace nekos {
 
 char Registry::keys[Registry::MAX_ENTRIES][Registry::MAX_KEY_LEN] = {0};

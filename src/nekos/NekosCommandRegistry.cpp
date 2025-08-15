@@ -1,44 +1,63 @@
-#include "config/device.h"
 #include "NekosCommandRegistry.h"
 #include "NekosConsole.h"
 #include "NekosArgParse.h"
-#include "NekosEventBus.h"
+#include "NekosCommand.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
 namespace nekos
 {
-    std::map<std::string, std::unique_ptr<Command>> CommandRegistry::commandMap;
+    struct CommandEntry {
+        const char* name;
+        Command* cmd;
+    };
+
+    // Adjust size as needed
+    static CommandEntry commandList[NEKOS_COMMAND_REGISTRY_TABLE_SIZE];
+    static size_t commandCount = 0;
+
     Command* CommandRegistry::registerCommand(
         const char* name,
-        std::function<void(Command *cmd, const char* args)> cb
+        CommandCallback cb
     )
     {
-        Command *c = new Command(name, cb);
-        commandMap[name] = std::unique_ptr<Command>(c);
-        c->topicQueue = xQueueCreate(NEKOS_STDIO_BUFFER_COUNT, sizeof(Topic));
-        c->inQueue = xQueueCreate(NEKOS_STDIO_BUFFER_COUNT, sizeof(char[NEKOS_STDIO_NUM_CHARS]));
-        c->outQueue = xQueueCreate(NEKOS_STDIO_BUFFER_COUNT, sizeof(char[NEKOS_STDIO_NUM_CHARS]));
+        if (commandCount >= NEKOS_COMMAND_REGISTRY_TABLE_SIZE) {
+            Console::logf("😿 Command registry full!");
+            return nullptr;
+        }
+
+        Command* c = new Command(name, cb);
+        commandList[commandCount++] = { name, c };
+        c->inQueue    = xQueueCreate(NEKOS_STDIO_BUFFER_COUNT, sizeof(char[NEKOS_STDIO_NUM_CHARS]));
+        c->outQueue   = xQueueCreate(NEKOS_STDIO_BUFFER_COUNT, sizeof(char[NEKOS_STDIO_NUM_CHARS]));
         Console::logf("😸 registered command [%s]", name);
-        return commandMap[name].get();
+        return c;
     }
 
     bool CommandRegistry::executeCommand(const char *name, const char *args)
     {
-        auto it = commandMap.find(name);
-        if (it == commandMap.end())
-        {
+        Command* cmd = nullptr;
+
+        for (size_t i = 0; i < commandCount; i++) {
+            if (strcmp(commandList[i].name, name) == 0) {
+                cmd = commandList[i].cmd;
+                break;
+            }
+        }
+
+        if (!cmd) {
             Console::logf("😿 Unknown command: %s\n", name);
             return false;
         }
-        Command *cmd = it->second.get();
-        if (!cmd->cb)
-        {
+        if (!cmd->cb) {
             Console::logf("🙀 Command '%s' has no callback!\n", name);
             return false;
         }
-        if (args && !cmd->args.parse(args))
-        {
+        if (args && !cmd->args.parse(args)) {
             Console::log(cmd->args.usage(name).c_str());
             return false;
         }
+
         cmd->cb(cmd, args);
         return true;
     }

@@ -3,11 +3,10 @@ extern "C" {
 #include "lualib.h"
 #include "lauxlib.h"
 }
+#include "FreeRTOS.h"
+#include "task.h"
 #include "Arduino.h"
 #include "NekosLua.h"
-#include <Wire.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 struct LuaTaskData {
     lua_State* L;
     int ref; // Lua function reference
@@ -67,36 +66,7 @@ namespace nekos {
     }
 
     // --- I²C ---
-    static int luaI2CBegin(lua_State *L) {
-        int sda = luaL_checkinteger(L, 1);
-        int scl = luaL_checkinteger(L, 2);
-        Wire.begin(sda, scl);
-        return 0;
-    }
 
-    static int luaI2CWrite(lua_State *L) {
-        int addr = luaL_checkinteger(L, 1);
-        Wire.beginTransmission(addr);
-        int n = lua_gettop(L);
-        for (int i = 2; i <= n; i++) {
-            int byteVal = luaL_checkinteger(L, i);
-            Wire.write((uint8_t)byteVal);
-        }
-        Wire.endTransmission();
-        return 0;
-    }
-
-    static int luaI2CRead(lua_State *L) {
-        int addr = luaL_checkinteger(L, 1);
-        int len = luaL_checkinteger(L, 2);
-        Wire.requestFrom(addr, len);
-        String result;
-        while (Wire.available()) {
-            result += (char)Wire.read();
-        }
-        lua_pushlstring(L, result.c_str(), result.length());
-        return 1;
-    }
 
     // print(string)
     static int luaSerialPrint(lua_State *L) {
@@ -195,9 +165,6 @@ namespace nekos {
         registerFunction(L, "serialRead", luaSerialRead);
         registerFunction(L, "serialReadLine", luaSerialReadLine);
         // I²C helpers
-        registerFunction(L, "i2cBegin", luaI2CBegin);
-        registerFunction(L, "i2cWrite", luaI2CWrite);
-        registerFunction(L, "i2cRead", luaI2CRead);
         // Constants
         registerArduinoConstants(L);
         registerI2CConstants(L);

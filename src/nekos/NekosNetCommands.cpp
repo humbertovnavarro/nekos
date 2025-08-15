@@ -1,3 +1,4 @@
+#ifdef NEKOS_HAS_WIFI
 #include "NekosConsole.h"
 #include "NekosNet.h"
 namespace nekos {
@@ -63,3 +64,4 @@ namespace nekos {
           ->addArgument("json", true);
     }
 }
+#endif

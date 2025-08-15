@@ -1,3 +1,4 @@
+#ifdef NEKOS_HAS_WIFI
 #include "Arduino.h"
 namespace nekos {
     namespace net {
@@ -15,3 +16,4 @@ namespace nekos {
         bool httpPostJSON(const char* url, const String& payload);
     }
 }
+#endif
