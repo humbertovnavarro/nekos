@@ -1,7 +1,8 @@
 # Build Instructions
-Download PlatformIO
-Clone Submodules `git submodule clone --recursive`
-Build. (ctrl + shift + p) >PlatformIO Build
+- Download PlatformIO
+- Clone Submodules `git submodule clone --recursive`
+- Set the default environment for your device in platformio.ini
+- Build. (ctrl + shift + p) PlatformIO Build
 
 # ⛰️🐈 Nek OS – Design Goals 🐈‍⬛⛰️
 
@@ -23,9 +24,9 @@ Build. (ctrl + shift + p) >PlatformIO Build
 - Use C++ only for performance-critical sections.
 
 ## 5. Flexible UI Layers
-- Support multiple display styles:
-  - **Scrolling menu** for single-button devices that run CLI commands.
-  - **Heads-up display (HUD)** for devices built to run CLI-style workflows.
+  - Support multiple display styles:
+  - Scrolling menu* for single-button devices that run CLI commands.
+  - Heads-up display for devices built to run CLI-style workflows.
 
 ## 6. Remote Access (Optional)
 - Consider adding SSH support for remote control.
@@ -33,7 +34,6 @@ Build. (ctrl + shift + p) >PlatformIO Build
 ## 7. Future Plans
 - Meshtastic API
 - Wifi attack and reconnaissance library and commands
-- 
 - Binary ELF execution
 
 
