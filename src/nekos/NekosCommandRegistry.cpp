@@ -7,8 +7,8 @@ namespace nekos
 {
     std::map<std::string, std::unique_ptr<Command>> CommandRegistry::commandMap;
     Command* CommandRegistry::registerCommand(
-        const char *name,
-        std::function<void(Command *cmd)> cb
+        const char* name,
+        std::function<void(Command *cmd, const char* args)> cb
     )
     {
         Command *c = new Command(name, cb);
@@ -39,7 +39,7 @@ namespace nekos
             Console::log(cmd->args.usage(name).c_str());
             return false;
         }
-        cmd->cb(cmd);
+        cmd->cb(cmd, args);
         return true;
     }
 }

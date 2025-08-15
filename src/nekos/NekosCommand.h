@@ -10,8 +10,8 @@ namespace nekos {
             QueueHandle_t topicQueue;
             QueueHandle_t inQueue;
             QueueHandle_t outQueue;
-            std::function<void(Command*)> cb;
-            Command(const char* n, std::function<void(Command*)> f) : name(n), cb(f) {}
+            std::function<void(Command*, const char*)> cb;
+            Command(const char* n, std::function<void(Command*, const char*)> f) : name(n), cb(f) {}
             Command() = delete;
             boolean isBackgroundTask() { return taskHandle != nullptr; };
     };

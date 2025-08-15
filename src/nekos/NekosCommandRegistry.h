@@ -6,8 +6,9 @@ namespace nekos {
     class CommandRegistry {
         public:
             static std::map<std::string, std::unique_ptr<Command>> commandMap;
-            static Command* registerCommand(const char* name,
-                std::function<void(Command* cmd)> cb
+            static Command* registerCommand(
+                const char* name,
+                std::function<void(Command* cmd, const char*)> cb
             );
             static bool executeCommand(const char* name, const char* args);
         private:

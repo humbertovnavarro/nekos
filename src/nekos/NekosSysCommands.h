@@ -1,6 +1,7 @@
 #include "NekosConsole.h"
 #include "NekosEventBus.h"
 #include "NekoCompat.h"
+#include "NekosLua.h"
 #include <Wire.h>
 
 #ifdef NEOPIXEL_PIN
@@ -10,8 +11,6 @@ Adafruit_NeoPixel pixel(1, NEOPIXEL_PIN);
 #ifdef HAS_WIFI
 #include "WiFi.h"
 #endif
-
-
 
 namespace nekos {
     void printVendorInfo() {
@@ -65,7 +64,7 @@ namespace nekos {
     #ifdef NEOPIXEL_PIN
         pixel.begin();
         pixel.setBrightness(0);
-        Console::commands.registerCommand("neopixel_set", [](Command* cmd) {
+        Console::commands.registerCommand("neopixel_set", [](Command* cmd, const char* args) {
             int led = atoi(cmd->args.get("led"));
             int r = atoi(cmd->args.get("r"));
             int g = atoi(cmd->args.get("g"));
@@ -82,28 +81,32 @@ namespace nekos {
         ->addArgument("i", false, "20", "intensity (0-255)");
     #endif
 
-    Console::commands.registerCommand("heap", [](Command* cmd) {
+    Console::commands.registerCommand("eval", [](Command* cmd, const char* args) {
+        luaExec(args);
+    });
+
+    Console::commands.registerCommand("heap", [](Command* cmd, const char* args) {
         size_t freeHeap = xPortGetFreeHeapSize();
         size_t minHeap = xPortGetMinimumEverFreeHeapSize();
         Console::logf("Free Heap: %u bytes\n", (unsigned)freeHeap);
         Console::logf("Min Ever Free Heap: %u bytes\n", (unsigned)minHeap);
     });
 
-    Console::commands.registerCommand("help", [](Command* cmd) {
+    Console::commands.registerCommand("help", [](Command* cmd, const char* args) {
             for (auto& [cmdName, cmdPtr] : Console::commands.commandMap) {
                 String usageStr = cmdPtr->args.usage(cmdName.c_str());
                 Console::logf("%s\n", usageStr.c_str());
             }
     });
 
-    Console::commands.registerCommand("reboot", [](Command* cmd) {
+    Console::commands.registerCommand("reboot", [](Command* cmd, const char* args) {
         EventBus::publish(Topic::REBOOT);
         fflush(stdout);
         vTaskDelay(REBOOT_IN_MS);
         REBOOT();
     });
 
-    Console::commands.registerCommand("i2c_scan", [](Command* cmd) {
+    Console::commands.registerCommand("i2c_scan", [](Command* cmd, const char* args) {
         Console::log("Scanning I2C bus...\n");
         for (uint8_t addr = 1; addr < 127; addr++) {
             Wire.beginTransmission(addr);
@@ -113,7 +116,7 @@ namespace nekos {
         }
     });
 
-    Console::commands.registerCommand("lshw", [](Command* cmd) {
+    Console::commands.registerCommand("lshw", [](Command* cmd, const char* args) {
         Console::log("=== Hardware Info ===");
         Console::log("Board: " ARDUINO_BOARD);
         Console::log("Variant: " ARDUINO_VARIANT);

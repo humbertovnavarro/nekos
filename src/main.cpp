@@ -9,10 +9,12 @@
 #include "nekos/NekosRegistry.h"
 #include "MUIU8g2.h"
 #include <Adafruit_NeoPixel.h>
+#include "tusb.h"
 // Display setup
 U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE);
 
 void setup() {
+
     nekos::fs::init();
     nekos::registerCoreCommands();
     nekos::Console::begin(BAUD);
