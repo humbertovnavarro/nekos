@@ -3,7 +3,7 @@ Download PlatformIO
 Clone Submodules `git submodule clone --recursive`
 Build. (ctrl + shift + p) >PlatformIO Build
 
-# 🐈 Nek OS – Design Goals 🐈‍⬛
+# ⛰️🐈 Nek OS – Design Goals 🐈‍⬛⛰️
 
 ## 1. Cross-Device Support
 - Target as many boards as possible using the Arduino HAL where feasible.
