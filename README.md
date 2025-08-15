@@ -1,5 +1,6 @@
 # Build Instructions
 - Download PlatformIO
+- setup [udev rules](https://docs.platformio.org/en/stable/core/installation/udev-rules.html) if you haven't already
 - Clone Submodules `git submodule clone --recursive`
 - Set the default environment for your device in platformio.ini
 - Build. (ctrl + shift + p) PlatformIO Build
