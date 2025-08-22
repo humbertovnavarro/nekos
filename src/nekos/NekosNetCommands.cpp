@@ -2,7 +2,7 @@
 #include "NekosNet.h"
 namespace nekos {
     void registerNetCommands() {
-        Console::commands.registerCommand("wifi_connect", [](Command* cmd, const char* args) {
+        CommandRegistry::registerCommand("wifi_connect", [](Command* cmd, const char* args) {
             const char* ssid = cmd->args.get("ssid");
             const char* password = cmd->args.get("password");
             if (net::wifiConnect(ssid, password)) {
@@ -15,13 +15,13 @@ namespace nekos {
           ->addArgument("password", true);
 
         // Disconnect WiFi
-        Console::commands.registerCommand("wifi_disconnect", [](Command* cmd, const char* args) {
+        CommandRegistry::registerCommand("wifi_disconnect", [](Command* cmd, const char* args) {
             net::wifiDisconnect();
             Console::log("WiFi disconnected.\n");
         });
 
         // WiFi status
-        Console::commands.registerCommand("wifi_status", [](Command* cmd, const char* args) {
+        CommandRegistry::registerCommand("wifi_status", [](Command* cmd, const char* args) {
             if (net::wifiIsConnected()) {
                 Console::logf("Connected. IP: %s\n", net::wifiGetLocalIP().c_str());
             } else {
@@ -30,12 +30,12 @@ namespace nekos {
         });
 
         // Scan available networks
-        Console::commands.registerCommand("wifi_scan", [](Command* cmd, const char* args) {
+        CommandRegistry::registerCommand("wifi_scan", [](Command* cmd, const char* args) {
             net::wifiScanNetworks();
         });
 
         // HTTP GET: http_get <url>
-        Console::commands.registerCommand("http_get", [](Command* cmd, const char* args) {
+        CommandRegistry::registerCommand("http_get", [](Command* cmd, const char* args) {
             const char* url = cmd->args.get("url");
             if (!url || strlen(url) == 0) {
                 Console::log("Usage: http_get <URL>\n");
@@ -47,7 +47,7 @@ namespace nekos {
         })->args.addArgument("url", true);
 
         // HTTP POST JSON: http_post <url> <json>
-        Console::commands.registerCommand("http_post", [](Command* cmd, const char* args) {
+        CommandRegistry::registerCommand("http_post", [](Command* cmd, const char* args) {
             const char* url = cmd->args.get("url");
             const char* json = cmd->args.get("json");
             if (!url || !json || strlen(url) == 0 || strlen(json) == 0) {

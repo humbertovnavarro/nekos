@@ -2,7 +2,7 @@
 #include "NekosFS.h"
 namespace nekos {
     void registerFSCommands() {
-        Console::commands.registerCommand("rm", [](Command* cmd, const char* args) {
+        CommandRegistry::registerCommand("rm", [](Command* cmd, const char* args) {
             const char* path = cmd->args.get("path");
             if (fs::deleteFile(path)) {
                 Console::logf("[rm] Deleted: %s\n", path);
@@ -11,7 +11,7 @@ namespace nekos {
             }
         })->args.addArgument("path", true);
 
-        Console::commands.registerCommand("touch", [](Command* cmd, const char* args) {
+        CommandRegistry::registerCommand("touch", [](Command* cmd, const char* args) {
             const char* path = cmd->args.get("path");
             if (fs::touchFile(path)) {
                 Console::logf("[touch] File created/updated: %s\n", path);
@@ -20,7 +20,7 @@ namespace nekos {
             }
         })->args.addArgument("path", true);
 
-        Console::commands.registerCommand("echo", [](Command* cmd, const char* args) {
+        CommandRegistry::registerCommand("echo", [](Command* cmd, const char* args) {
             const char* path = cmd->args.get("path");
             const char* text = cmd->args.get("text");
             if (fs::writeFile(path, text)) {
@@ -32,7 +32,7 @@ namespace nekos {
         ->args.addArgument("path", true)
         ->addArgument("text", true);
 
-        Console::commands.registerCommand("mkdir", [](Command* cmd, const char* args) {
+        CommandRegistry::registerCommand("mkdir", [](Command* cmd, const char* args) {
             const char* path = cmd->args.get("path");
             if (fs::makeDir(path)) {
                 Console::logf("[mkdir] Created path: %s\n", path);
@@ -41,7 +41,7 @@ namespace nekos {
             }
         })->args.addArgument("path", true);
         
-        Console::commands.registerCommand("cat", [](Command* cmd, const char* args) {
+        CommandRegistry::registerCommand("cat", [](Command* cmd, const char* args) {
             const char* path = cmd->args.get("path");
             String content = fs::readFile(path);
             if (content.length() == 0) {

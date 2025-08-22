@@ -4,11 +4,11 @@
 #include "Arduino.h"
 #include "NekosCommandRegistry.h"
 #include "NekosConsole.h"
+#include "NekosFS.h"
+#include "NekosLua.h"
 
 namespace nekos
 {
-    // Define static members
-    CommandRegistry commands = CommandRegistry();
     char Console::_lineBuf[SHELL_INPUT_BUFFER_SIZE] = {};
     size_t Console::_lineIndex = 0;
     TaskHandle_t consoleLoopHandle;
@@ -83,9 +83,19 @@ namespace nekos
         char *saveptr = nullptr;
         char *cmd = strtok_r(buf, " ", &saveptr);
         char *args = strtok_r(nullptr, "", &saveptr);
+        String luaCommand = "/bin/";
+        luaCommand.concat(cmd);
+        luaCommand.concat(".lua");
         if (!cmd)
             return;
-        Console::commands.executeCommand(cmd, args);
+        if(CommandRegistry::commandExists(cmd)) {
+            String contents = nekos::fs::readFile(luaCommand.c_str());
+            luaExec(contents.c_str());
+        }
+        else if (nekos::fs::fileExists(luaCommand.c_str())) {
+        } else {
+            Console::logf("😿 Unknown command: %s\n", cmd);
+        }
         printPrompt();
     }
 
