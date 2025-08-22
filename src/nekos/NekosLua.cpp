@@ -8,6 +8,8 @@ extern "C" {
 #include <Wire.h>
 #include "FreeRTOS.h"
 #include "task.h"
+#include "NekosCommandRegistry.h"
+
 struct LuaTaskData {
     lua_State* L;
     int ref; // Lua function reference
@@ -175,6 +177,17 @@ namespace nekos {
         int ms = luaL_checkinteger(L, 1);
         vTaskDelay(pdMS_TO_TICKS(ms));
         return 0;
+    }
+
+    static int luaRunCommand(lua_State *L) {
+        const char* name = luaL_checkstring(L, 1);
+        const char* args = nullptr;
+        if (lua_gettop(L) >= 2 && !lua_isnil(L, 2)) {
+            args = luaL_checkstring(L, 2);
+        }
+        bool success = nekos::CommandRegistry::executeCommand(name, args ? args : "");
+        lua_pushboolean(L, success);
+        return 1;
     }
 
     void luaExec(const char* script) {

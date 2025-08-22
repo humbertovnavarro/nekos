@@ -6,5 +6,4 @@ namespace nekos {
     #else
         #define REBOOT() abort();
     #endif
-
 }
