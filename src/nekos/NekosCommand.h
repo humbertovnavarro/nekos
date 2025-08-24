@@ -3,16 +3,15 @@
 #include "NekosArgParse.h"
 
 namespace nekos {
+    class Command;
+    using  CommandCallback = std::function<void(Command*, const char*)>;
     class Command {
         public:
-            String name;
+            const char* name;
+            String output;
             ArgParse args;
-            TaskHandle_t taskHandle = nullptr;
-            QueueHandle_t inQueue;
-            QueueHandle_t outQueue;
-            std::function<void(Command*, const char*)> cb;
-            Command(const char* n, std::function<void(Command*, const char*)> f) : name(n), cb(f) {}
+            CommandCallback cb;
+            Command(const char* n, CommandCallback f) : name(n), cb(f) {}
             Command() = delete;
-            boolean isBackgroundTask() { return taskHandle != nullptr; };
     };
 }

@@ -89,14 +89,37 @@ namespace nekos
         if (!cmd)
             return;
         if(CommandRegistry::commandExists(cmd)) {
-            String contents = nekos::fs::readFile(luaCommand.c_str());
-            luaExec(contents.c_str());
+            Command* command = CommandRegistry::getCommand(cmd);
+            try {
+                command->args.parse(args);
+                command->cb(command, args);
+            } catch(std::exception err) {
+                Console::log(err.what());
+            }
+            if(command->output) {
+                Console::log(command->output.c_str());
+                command->output.clear();
+            }
         }
         else if (nekos::fs::fileExists(luaCommand.c_str())) {
-        } else {
+            String contents = nekos::fs::readFile(luaCommand.c_str());
+            String output = luaExec(contents.c_str());
+            if(output) {
+                nekos::Console::log(output.c_str());
+            }
+        } 
+        else {
             Console::logf("😿 Unknown command: %s\n", cmd);
         }
-        printPrompt();
+        if(nekos::fs::fileExists("/bin/prompt.lua")) {
+            String contents = nekos::fs::readFile(luaCommand.c_str());
+            String output = luaExec(contents.c_str());
+            if(output) {
+                nekos::Console::log(output.c_str());
+            }
+        } else {
+            printPrompt();
+        }
     }
 
     void Console::poll()

@@ -3,5 +3,5 @@
     lua_setglobal(L, name);
     
 namespace nekos {
-    void luaExec(const char* lua);
+    String luaExec(const char* lua);
 }
