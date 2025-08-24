@@ -101,25 +101,25 @@ namespace nekos
                 command->output.clear();
             }
         }
-        else if (nekos::fs::fileExists(luaCommand.c_str())) {
-            String contents = nekos::fs::readFile(luaCommand.c_str());
-            String output = luaExec(contents.c_str());
-            if(output) {
-                nekos::Console::log(output.c_str());
-            }
-        } 
+        // else if (nekos::fs::fileExists(luaCommand.c_str())) {
+        //     String contents = nekos::fs::readFile(luaCommand.c_str());
+        //     String output = luaExec(contents.c_str());
+        //     if(output) {
+        //         nekos::Console::log(output.c_str());
+        //     }
+        // } 
         else {
             Console::logf("😿 Unknown command: %s\n", cmd);
         }
-        if(nekos::fs::fileExists("/bin/prompt.lua")) {
-            String contents = nekos::fs::readFile(luaCommand.c_str());
-            String output = luaExec(contents.c_str());
-            if(output) {
-                nekos::Console::log(output.c_str());
-            }
-        } else {
-            printPrompt();
-        }
+        // if(nekos::fs::fileExists("/bin/prompt.lua")) {
+        //     String contents = nekos::fs::readFile(luaCommand.c_str());
+        //     String output = luaExec(contents.c_str());
+        //     if(output) {
+        //         nekos::Console::log(output.c_str());
+        //     }
+        // } else {
+        //     printPrompt();
+        // }
     }
 
     void Console::poll()

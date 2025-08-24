@@ -61,6 +61,9 @@ namespace nekos {
     }
 
     String luaExec(const char* script) {
+        if(!script) {
+            return;
+        }
         lua_State* L = luaL_newstate();
         luaL_openlibs(L);
         // Override print
