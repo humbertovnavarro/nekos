@@ -6,6 +6,7 @@
 #include "NekosConsole.h"
 #include "NekosFS.h"
 #include "NekosLua.h"
+#include "FFat.h"
 
 namespace nekos
 {
@@ -75,7 +76,6 @@ namespace nekos
     {
         if (!line || line[0] == '\0')
             return;
-        // Always start command output on a new line
         Serial.println();
         char buf[SHELL_INPUT_BUFFER_SIZE];
         strncpy(buf, line, sizeof(buf) - 1);
@@ -101,25 +101,13 @@ namespace nekos
                 command->output.clear();
             }
         }
-        // else if (nekos::fs::fileExists(luaCommand.c_str())) {
-        //     String contents = nekos::fs::readFile(luaCommand.c_str());
-        //     String output = luaExec(contents.c_str());
-        //     if(output) {
-        //         nekos::Console::log(output.c_str());
-        //     }
-        // } 
+        else if (FFat.exists(luaCommand.c_str())) {
+            File f = FFat.open(luaCommand.c_str());
+            luaExec(f.readString().c_str());
+        }
         else {
             Console::logf("😿 Unknown command: %s\n", cmd);
         }
-        // if(nekos::fs::fileExists("/bin/prompt.lua")) {
-        //     String contents = nekos::fs::readFile(luaCommand.c_str());
-        //     String output = luaExec(contents.c_str());
-        //     if(output) {
-        //         nekos::Console::log(output.c_str());
-        //     }
-        // } else {
-        //     printPrompt();
-        // }
     }
 
     void Console::poll()

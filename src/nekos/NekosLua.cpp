@@ -60,7 +60,7 @@ namespace nekos {
         return 0;
     }
 
-    String luaExec(const char* script) {
+    void luaExec(const char* script) {
         if(!script) {
             return;
         }
