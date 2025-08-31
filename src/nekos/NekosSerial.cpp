@@ -31,13 +31,29 @@ int luaSerialAvailable(lua_State* L) {
 }
 
 int luaSerialRead(lua_State* L) {
-    if (Serial.available() > 0) {
-        lua_pushinteger(L, Serial.read());
-    } else {
-        lua_pushnil(L);
+    int n = luaL_optinteger(L, 1, 1);  // default to 1 byte if not specified
+    if (n <= 0) {
+        lua_pushstring(L, "");
+        return 1;
     }
+
+    char buf[128];  // buffer (limit for safety)
+    if (n > sizeof(buf)) n = sizeof(buf);
+
+    int count = 0;
+    while (count < n && Serial.available() > 0) {
+        buf[count++] = Serial.read();
+    }
+
+    if (count > 0) {
+        lua_pushlstring(L, buf, count);  // push as Lua string
+    } else {
+        lua_pushnil(L);  // nothing available
+    }
+
     return 1;
 }
+
 
 int luaSerialWrite(lua_State* L) {
     int byte = luaL_checkinteger(L, 1);

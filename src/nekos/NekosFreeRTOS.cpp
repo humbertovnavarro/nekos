@@ -123,15 +123,31 @@ int luaGetTaskHandle(lua_State* L) {
 void registerFreeRTOSBindings(lua_State* L) {
     lua_newtable(L);
 
-    lua_pushcfunction(L, luaDelay);        lua_setfield(L, -2, "delay");
-    lua_pushcfunction(L, luaYield);        lua_setfield(L, -2, "yield");
-    lua_pushcfunction(L, luaMillis);       lua_setfield(L, -2, "millis");
-    lua_pushcfunction(L, luaCreateTask);   lua_setfield(L, -2, "createTask");
-    lua_pushcfunction(L, luaDeleteTask);   lua_setfield(L, -2, "deleteTask");
-    lua_pushcfunction(L, luaGetTaskName);  lua_setfield(L, -2, "getTaskName");
-    lua_pushcfunction(L, luaGetTaskHandle);lua_setfield(L, -2, "getTaskHandle");
+    lua_pushcfunction(L, luaDelay);         lua_setfield(L, -2, "delay");
+    lua_pushcfunction(L, luaYield);         lua_setfield(L, -2, "yield");
+    lua_pushcfunction(L, luaMillis);        lua_setfield(L, -2, "millis");
+    lua_pushcfunction(L, luaCreateTask);    lua_setfield(L, -2, "createTask");
+    lua_pushcfunction(L, luaDeleteTask);    lua_setfield(L, -2, "deleteTask");
+    lua_pushcfunction(L, luaGetTaskName);   lua_setfield(L, -2, "getTaskName");
+    lua_pushcfunction(L, luaGetTaskHandle); lua_setfield(L, -2, "getTaskHandle");
 
+    // Set FreeRTOS global table
     lua_setglobal(L, "FreeRTOS");
+
+    // -----------------------------------------
+    // Aliases: map globals to FreeRTOS.*
+    // -----------------------------------------
+    luaL_dostring(L,
+        "delay        = FreeRTOS.delay\n"
+        "yield        = FreeRTOS.yield\n"
+        "millis       = FreeRTOS.millis\n"
+        "createTask   = FreeRTOS.createTask\n"
+        "deleteTask   = FreeRTOS.deleteTask\n"
+        "getTaskName  = FreeRTOS.getTaskName\n"
+        "getTaskHandle= FreeRTOS.getTaskHandle\n"
+    );
 }
+
+
 
 } // namespace nekos

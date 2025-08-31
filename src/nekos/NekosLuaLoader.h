@@ -18,12 +18,12 @@ public:
     static void exec(const String &name, const char* args = nullptr);
     static bool exists(const String &name);
     static void listScripts();
+    static char* getScript(const String &name, bool moveToFront = true);
 
 private:
     static size_t _capacity;
     static std::list<LuaCacheEntry> _cacheList;
 
-    static char* getScript(const String &name, bool moveToFront = true);
 };
 
 } // namespace nekos

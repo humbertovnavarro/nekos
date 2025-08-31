@@ -78,6 +78,10 @@ void Console::begin(unsigned long baud) {
 }
 
 void Console::poll() {
+    static bool escSeq = false;
+    static int escIndex = 0;
+    static char escBuf[2];
+
     while (Serial.available() > 0) {
         char c = Serial.read();
 
@@ -101,13 +105,9 @@ void Console::poll() {
         }
 
         // --------- Escape sequence (arrow keys) ----------
-        static bool escSeq = false;
-        static char escBuf[2];
-        static int escIndex = 0;
-
         if (escSeq) {
             escBuf[escIndex++] = c;
-            if (escIndex == 2) {
+            if (escIndex == 2) {  // expect [ + <letter>
                 if (escBuf[0] == '[') {
                     switch (escBuf[1]) {
                         case 'A': // UP
@@ -116,7 +116,7 @@ void Console::poll() {
                                 String h = _history[_histIndex];
                                 strncpy(_lineBuf, h.c_str(), SHELL_INPUT_BUFFER_SIZE);
                                 _lineLen = _cursorPos = h.length();
-                                Serial.print("\r\033[K"); // clear line
+                                Serial.print("\r\033[K");
                                 printPrompt();
                                 Serial.write(_lineBuf, _lineLen);
                             }
@@ -135,10 +135,16 @@ void Console::poll() {
                             }
                             break;
                         case 'C': // RIGHT
-                            if (_cursorPos < _lineLen) Serial.write(_lineBuf[_cursorPos++]);
+                            if (_cursorPos < _lineLen) {
+                                Serial.write(_lineBuf[_cursorPos]);
+                                _cursorPos++;
+                            }
                             break;
                         case 'D': // LEFT
-                            if (_cursorPos > 0) { Serial.print('\b'); _cursorPos--; }
+                            if (_cursorPos > 0) {
+                                Serial.print('\b');
+                                _cursorPos--;
+                            }
                             break;
                     }
                 }
@@ -148,7 +154,11 @@ void Console::poll() {
             continue;
         }
 
-        if (c == 27) { escSeq = true; escIndex = 0; continue; } // ESC start
+        if (c == 27) {  // ESC start
+            escSeq = true;
+            escIndex = 0;
+            continue;
+        }
 
         // --------- Backspace ----------
         if ((c == '\b' || c == 127) && _cursorPos > 0) {
@@ -156,10 +166,9 @@ void Console::poll() {
             _cursorPos--; _lineLen--;
             _lineBuf[_lineLen] = '\0';
 
-            Serial.print("\r\033[K"); // clear line
+            Serial.print("\r\033[K");
             printPrompt();
             Serial.write(_lineBuf, _lineLen);
-            // move cursor back if needed
             if (_cursorPos < _lineLen) printRepeat('\b', _lineLen - _cursorPos);
             continue;
         }
@@ -190,10 +199,11 @@ void Console::poll() {
             Serial.print("\r\033[K");
             printPrompt();
             Serial.write(_lineBuf, _lineLen);
-            printRepeat('\b', _lineLen - _cursorPos);
+            if (_cursorPos < _lineLen) printRepeat('\b', _lineLen - _cursorPos);
         }
     }
 }
+
 
 
 } // namespace nekos
