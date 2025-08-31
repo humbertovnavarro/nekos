@@ -1,22 +1,33 @@
 #pragma once
-#include "FreeRTOS.h"
+
+#include <Arduino.h>
+#include <vector>
+#include <map>
+#include "LuaScripts.h"
+#include "Nekos.h"
+
 namespace nekos {
-    #define SHELL_INPUT_BUFFER_SIZE 256
-    #define QUEUE_MSG_SIZE 256
-    class Console {
-    public:
-        // Initialize serial console at given baud rate
-        static void begin(unsigned long baud = 115200);
-        // Call repeatedly in your loop()
-        static void poll();
-        // Logging helpers
-        static void log(const char *message);
-        static void logf(const char *fmt, ...);
-    private:
-        static void printPrompt();
-        static void _dispatchLine(const char* line);
-        static char _lineBuf[SHELL_INPUT_BUFFER_SIZE];
-        static size_t _lineIndex;
-        static int _commandCount;
-    };
-}
+
+constexpr size_t SHELL_INPUT_BUFFER_SIZE = 128;
+constexpr size_t HISTORY_SIZE = 16;
+
+class Console {
+public:
+    static void begin(unsigned long baud);
+    static void poll();
+
+private:
+    static char _lineBuf[SHELL_INPUT_BUFFER_SIZE];
+    static size_t _lineLen;
+    static size_t _cursorPos;
+
+    static std::vector<String> _history;
+    static int _histIndex;
+
+    static void printPrompt();
+    static void printRepeat(char c, size_t count);
+    static void dispatchCommand(const char* line);
+    static String completeCommand(const String &prefix);
+};
+
+} // namespace nekos

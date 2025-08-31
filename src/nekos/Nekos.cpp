@@ -3,41 +3,21 @@ extern "C" {
     #include "lualib.h"
     #include "lauxlib.h"
 }
-
+#include "NekosSerial.h"
 #include "Arduino.h"
 #include "LuaScripts.h"
 #include "NekosFat.h"
 #include "Nekos.h"
 
 namespace nekos {
-
-    // -------------------------------
-    // Lua: print → Serial
-    // -------------------------------
-    static int luaSerialPrint(lua_State* L) {
-        int nargs = lua_gettop(L);
-        for (int i = 1; i <= nargs; ++i) {
-            size_t len;
-            const char* str = luaL_tolstring(L, i, &len);
-            if (str) {
-                Serial.write(str, len);
-                lua_pop(L, 1); // pop luaL_tolstring result
-            }
-            if (i < nargs) Serial.write('\t');
-        }
-        Serial.write('\n');
-        return 0;
-    }
-
     // -------------------------------
     // Register Lua bindings
     // -------------------------------
     void registerLuaBindings(lua_State* L) {
-        
-        // Print -> serial print
-        lua_pushcfunction(L, luaSerialPrint);
-        lua_setglobal(L, "print");
 
+        // Serial bindings
+        registerSerialBindings(L);
+        
         // FFat bindings
         registerFFatBindings(L);
 
@@ -74,6 +54,5 @@ namespace nekos {
 
         lua_close(L);
     }
-
 
 }

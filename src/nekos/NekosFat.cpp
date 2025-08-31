@@ -5,23 +5,24 @@ extern "C" {
 }
 #include "FFat.h"
 #include "NekosFat.h"
+
 namespace nekos {
     // -------------------------------
     // FAT filesystem bindings
     // -------------------------------
-    static int luaFAT_exists(lua_State* L) {
+    static int luaFFatexists(lua_State* L) {
         const char* path = luaL_checkstring(L, 1);
         lua_pushboolean(L, FFat.exists(path));
         return 1;
     }
 
-    static int luaFAT_remove(lua_State* L) {
+    static int luaFFatremove(lua_State* L) {
         const char* path = luaL_checkstring(L, 1);
         lua_pushboolean(L, FFat.remove(path));
         return 1;
     }
 
-    static int luaFAT_read(lua_State* L) {
+    static int luaFFatread(lua_State* L) {
         const char* path = luaL_checkstring(L, 1);
         File f = FFat.open(path, FILE_READ);
         if (!f) { lua_pushnil(L); return 1; }
@@ -32,7 +33,7 @@ namespace nekos {
         return 1;
     }
 
-    static int luaFAT_write(lua_State* L) {
+    static int luaFFatwrite(lua_State* L) {
         const char* path = luaL_checkstring(L, 1);
         const char* data = luaL_checkstring(L, 2);
         File f = FFat.open(path, FILE_WRITE, true);
@@ -41,7 +42,7 @@ namespace nekos {
         return 1;
     }
 
-    static int luaFAT_append(lua_State* L) {
+    static int luaFFatappend(lua_State* L) {
         const char* path = luaL_checkstring(L, 1);
         const char* data = luaL_checkstring(L, 2);
         File f = FFat.open(path, FILE_APPEND, true);
@@ -50,7 +51,7 @@ namespace nekos {
         return 1;
     }
 
-    static int luaFAT_ls(lua_State* L) {
+    static int luaFFatls(lua_State* L) {
         File root = FFat.open("/");
         File file = root.openNextFile();
         lua_newtable(L);
@@ -66,12 +67,12 @@ namespace nekos {
     
     void registerFFatBindings(lua_State* L) {
         lua_newtable(L);
-        lua_pushcfunction(L, luaFAT_exists);   lua_setfield(L, -2, "exists");
-        lua_pushcfunction(L, luaFAT_remove);   lua_setfield(L, -2, "remove");
-        lua_pushcfunction(L, luaFAT_read);     lua_setfield(L, -2, "read");
-        lua_pushcfunction(L, luaFAT_write);    lua_setfield(L, -2, "write");
-        lua_pushcfunction(L, luaFAT_append);   lua_setfield(L, -2, "append");
-        lua_pushcfunction(L, luaFAT_ls);       lua_setfield(L, -2, "ls");
+        lua_pushcfunction(L, luaFFatexists);   lua_setfield(L, -2, "exists");
+        lua_pushcfunction(L, luaFFatremove);   lua_setfield(L, -2, "remove");
+        lua_pushcfunction(L, luaFFatread);     lua_setfield(L, -2, "read");
+        lua_pushcfunction(L, luaFFatwrite);    lua_setfield(L, -2, "write");
+        lua_pushcfunction(L, luaFFatappend);   lua_setfield(L, -2, "append");
+        lua_pushcfunction(L, luaFFatls);       lua_setfield(L, -2, "ls");
         lua_setglobal(L, "FFat");
     }
 

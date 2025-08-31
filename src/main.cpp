@@ -1,12 +1,12 @@
 #include "Arduino.h"
+#include "nekos/Nekos.h"
 #include "nekos/NekosConsole.h"
-#include "FFat.h"
 void setup() {
-  FFat.begin(true, "/", 10, "storage");
-  nekos::Console::begin();
+  Serial.print("Starting init.lua");
 }
 
 void loop() {
-  vTaskDelay(1000);
+  nekos::Console::poll();
+  vTaskDelay(1);
 }
 

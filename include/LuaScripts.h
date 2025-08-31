@@ -99,4 +99,15 @@ static std::map<String, const char*> luaScriptMap = {
 "else\n"
 "    print(\"No baked scripts available\")\n"
 "end"},
+    {"clear", "-- clear.lua\n"
+"-- Clears the serial console\n"
+"\n"
+"local function clear()\n"
+"    -- ANSI escape codes: clear screen and move cursor home\n"
+"    Serial.print(\"\\27[2J\")  -- Clear entire screen\n"
+"    Serial.print(\"\\27[H\")   -- Move cursor to top-left\n"
+"end\n"
+"\n"
+"clear()\n"
+""},
 };
