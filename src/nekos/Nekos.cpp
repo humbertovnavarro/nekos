@@ -6,7 +6,6 @@ extern "C" {
 #include "NekosSerial.h"
 #include "Arduino.h"
 #include "LuaScripts.h"
-#include "NekosFat.h"
 #include "Nekos.h"
 
 namespace nekos {
@@ -14,22 +13,8 @@ namespace nekos {
     // Register Lua bindings
     // -------------------------------
     void registerLuaBindings(lua_State* L) {
-
         // Serial bindings
         registerSerialBindings(L);
-        
-        // FFat bindings
-        registerFFatBindings(L);
-
-        // Expose scripts
-        lua_newtable(L);
-        int index = 1;
-        for (auto &kv : luaScriptMap) {
-            lua_pushstring(L, kv.second);   // value = script
-            lua_setfield(L, -2, kv.first.c_str()); // key = script name
-            index++;
-        }
-
         lua_setglobal(L, "bakedScripts"); // global.bakedScripts = table
     }
 

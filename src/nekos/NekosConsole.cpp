@@ -1,6 +1,7 @@
 #include "NekosConsole.h"
 #include <cstring>
-
+#include "LuaScripts.h"
+#include "NekosLuaLoader.h"
 namespace nekos {
 
 // ------------------- Static members -------------------
@@ -25,11 +26,14 @@ void Console::dispatchCommand(const char* line) {
     char cmd[SHELL_INPUT_BUFFER_SIZE] = {};
     char args[SHELL_INPUT_BUFFER_SIZE] = {};
 
+    // Split command from arguments
     sscanf(line, "%s %[^\n]", cmd, args);
 
-    auto it = luaScriptMap.find(String(cmd));
-    if (it != luaScriptMap.end()) {
-        luaExec(it->second, args);
+    String commandName(cmd);
+
+    // Execute via NekosLuaLoader static methods (handles caching and PSRAM)
+    if (nekos::NekosLuaLoader::exists(commandName)) {
+        nekos::NekosLuaLoader::exec(commandName, args[0] ? args : nullptr);
     } else {
         Serial.print("Command '");
         Serial.print(cmd);
@@ -39,7 +43,7 @@ void Console::dispatchCommand(const char* line) {
 
 String Console::completeCommand(const String& prefix) {
     std::vector<String> matches;
-    for (auto &p : luaScriptMap) {
+    for (auto &p : *luaScriptMap) {
         if (p.first.startsWith(prefix)) matches.push_back(p.first);
     }
 

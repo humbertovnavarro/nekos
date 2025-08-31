@@ -1,9 +1,7 @@
 #pragma once
-
 #include <Arduino.h>
 #include <vector>
 #include <map>
-#include "LuaScripts.h"
 #include "Nekos.h"
 
 namespace nekos {

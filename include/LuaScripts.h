@@ -1,113 +1,22 @@
-// Auto-generated Lua scripts
-
 #pragma once
 #include <Arduino.h>
 #include <map>
+#include <pgmspace.h>
 
-static std::map<String, const char*> luaScriptMap = {
-    {"helloworld", "print(\"Hello From Lua!\")"},
-    {"heap", "local ok, output = run_command(\"heap\")\n"
-"if ok then\n"
-"    print(\"Heap info: \", output)\n"
-"else\n"
-"    print(\"Error running command: \", output)\n"
-"end\n"
-""},
-    {"ls", "-- List files in root\n"
-"local files = FFat.ls()\n"
-"for i, f in ipairs(files) do\n"
-"    print(f)\n"
-"end\n"
-""},
-    {"cat", "-- Read file content and print\n"
-"local path = ...  -- first argument\n"
-"if not path then\n"
-"    print(\"Usage: cat <file>\")\n"
-"    return\n"
-"end\n"
-"\n"
-"if not FFat.exists(path) then\n"
-"    print(\"File not found: \" .. path)\n"
-"    return\n"
-"end\n"
-"\n"
-"local content = FFat.read(path)\n"
-"print(content)\n"
-""},
-    {"rm", "-- Remove a file\n"
-"local path = ...\n"
-"if not path then\n"
-"    print(\"Usage: rm <file>\")\n"
-"    return\n"
-"end\n"
-"\n"
-"if FFat.exists(path) then\n"
-"    if FFat.remove(path) then\n"
-"        print(\"Deleted: \" .. path)\n"
-"    else\n"
-"        print(\"Failed to delete: \" .. path)\n"
-"    end\n"
-"else\n"
-"    print(\"File not found: \" .. path)\n"
-"end\n"
-""},
-    {"write", "-- Write string to a file (overwrite)\n"
-"local path, data = ...\n"
-"if not path or not data then\n"
-"    print(\"Usage: write <file> <data>\")\n"
-"    return\n"
-"end\n"
-"\n"
-"if FFat.write(path, data) then\n"
-"    print(\"Written to: \" .. path)\n"
-"else\n"
-"    print(\"Failed to write: \" .. path)\n"
-"end\n"
-""},
-    {"append", "-- Append string to a file\n"
-"local path, data = ...\n"
-"if not path or not data then\n"
-"    print(\"Usage: append <file> <data>\")\n"
-"    return\n"
-"end\n"
-"\n"
-"if FFat.append(path, data) then\n"
-"    print(\"Appended to: \" .. path)\n"
-"else\n"
-"    print(\"Failed to append: \" .. path)\n"
-"end\n"
-""},
-    {"mkdir", "-- Create a pseudo-directory (dummy file)\n"
-"local path = ...\n"
-"if not path then\n"
-"    print(\"Usage: mkdir <dir>\")\n"
-"    return\n"
-"end\n"
-"\n"
-"local dummy = path .. \"/.keep\"\n"
-"if FFat.write(dummy, \"\") then\n"
-"    print(\"Created dir: \" .. path)\n"
-"else\n"
-"    print(\"Failed to create dir: \" .. path)\n"
-"end\n"
-""},
-    {"help", "print(\"\\n=== Lua Scripts ===\")\n"
+static const char help_script[] PROGMEM = "print(\"\\n=== Lua Scripts ===\")\n"
 "if bakedScripts then\n"
 "    for name, _ in pairs(bakedScripts) do\n"
 "        print(\"- \" .. name)\n"
 "    end\n"
 "else\n"
 "    print(\"No baked scripts available\")\n"
-"end"},
-    {"clear", "-- clear.lua\n"
-"-- Clears the serial console\n"
-"\n"
-"local function clear()\n"
-"    -- ANSI escape codes: clear screen and move cursor home\n"
-"    Serial.print(\"\\27[2J\")  -- Clear entire screen\n"
-"    Serial.print(\"\\27[H\")   -- Move cursor to top-left\n"
-"end\n"
-"\n"
-"clear()\n"
-""},
-};
+"end";
+
+// Lua script map (runtime map pointing to flash strings)
+static std::map<String, const char*>* luaScriptMap = nullptr;
+
+static void initLuaScriptMap() {
+    if (luaScriptMap) return;
+    luaScriptMap = new std::map<String, const char*>();
+    (*luaScriptMap)["help"] = help_script;
+}
