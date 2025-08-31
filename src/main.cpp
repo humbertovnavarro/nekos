@@ -1,12 +1,9 @@
 #include "Arduino.h"
-#include "nekos/NekosFS.h"
 #include "nekos/NekosConsole.h"
-#include "nekos/NekosCoreCommands.h"
+#include "FFat.h"
 void setup() {
-  pinMode(LED_BUILTIN, OUTPUT);
-  nekos::fs::begin();
+  FFat.begin(true, "/", 10, "storage");
   nekos::Console::begin();
-  nekos::registerCoreCommands();
 }
 
 void loop() {

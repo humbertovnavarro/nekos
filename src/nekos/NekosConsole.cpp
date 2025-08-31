@@ -2,12 +2,9 @@
 #include <cstdio>
 #include <cstring>
 #include "Arduino.h"
-#include "NekosCommandRegistry.h"
 #include "NekosConsole.h"
-#include "NekosFS.h"
-#include "NekosLua.h"
-#include "FFat.h"
-
+#include "LuaScripts.h"
+#include "Nekos.h"
 namespace nekos
 {
     char Console::_lineBuf[SHELL_INPUT_BUFFER_SIZE] = {};
@@ -83,30 +80,13 @@ namespace nekos
         char *saveptr = nullptr;
         char *cmd = strtok_r(buf, " ", &saveptr);
         char *args = strtok_r(nullptr, "", &saveptr);
-        String luaCommand = "/bin/";
-        luaCommand.concat(cmd);
-        luaCommand.concat(".lua");
-        if (!cmd)
-            return;
-        if(CommandRegistry::commandExists(cmd)) {
-            Command* command = CommandRegistry::getCommand(cmd);
-            try {
-                command->args.parse(args);
-                command->cb(command, args);
-            } catch(std::exception err) {
-                Console::log(err.what());
-            }
-            if(command->output) {
-                Console::log(command->output.c_str());
-                command->output.clear();
-            }
-        }
-        else if (FFat.exists(luaCommand.c_str())) {
-            File f = FFat.open(luaCommand.c_str());
-            luaExec(f.readString().c_str());
-        }
-        else {
-            Console::logf("😿 Unknown command: %s\n", cmd);
+        if (!cmd) return;
+        auto it = luaScriptMap.find(cmd);
+        if(it != luaScriptMap.end()) {
+            const char* script = it->second;
+            luaExec(script, args);
+        } else {
+            Console::logf("Command %s not found", cmd);
         }
     }
 

@@ -1,13 +1,10 @@
 #pragma once
 #include "FreeRTOS.h"
-#include "NekosCommandRegistry.h"
-
 namespace nekos {
     #define SHELL_INPUT_BUFFER_SIZE 256
     #define QUEUE_MSG_SIZE 256
     class Console {
     public:
-        static CommandRegistry commands;
         // Initialize serial console at given baud rate
         static void begin(unsigned long baud = 115200);
         // Call repeatedly in your loop()
