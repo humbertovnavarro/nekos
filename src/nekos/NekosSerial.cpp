@@ -54,6 +54,42 @@ int luaSerialRead(lua_State* L) {
     return 1;
 }
 
+int luaSerialReadLine(lua_State* L) {
+    bool privateMode = false;
+
+    // Check optional parameter
+    if (lua_gettop(L) >= 1 && lua_isboolean(L, 1)) {
+        privateMode = lua_toboolean(L, 1);
+    }
+
+    String result;
+    bool finished = false;
+
+    while (!finished) {
+        while (Serial.available() && !finished) {
+            char c = Serial.read();
+
+            // Echo character
+            if (privateMode && c != '\n' && c != '\r') {
+                Serial.print('*');
+            } else {
+                Serial.print(c);
+            }
+
+            // End of line
+            if (c == '\n' || c == '\r') {
+                finished = true;
+            } else {
+                result += c;
+            }
+        }
+
+        vTaskDelay(10 / portTICK_PERIOD_MS); // yield
+    }
+
+    lua_pushstring(L, result.c_str());
+    return 1;
+}
 
 int luaSerialWrite(lua_State* L) {
     int byte = luaL_checkinteger(L, 1);
@@ -99,6 +135,9 @@ void registerSerialBindings(lua_State* L) {
     lua_pushcfunction(L, luaSerialRead);
     lua_setfield(L, -2, "read");
 
+    lua_pushcfunction(L, luaSerialReadLine);
+    lua_setfield(L, -2, "readLine");
+
     lua_pushcfunction(L, luaSerialWrite);
     lua_setfield(L, -2, "write");
 
@@ -107,19 +146,7 @@ void registerSerialBindings(lua_State* L) {
 
     lua_setglobal(L, "Serial");  // expose as global Serial
 
-    // ----------------- override global print -----------------
-    lua_pushcfunction(L, [](lua_State* L) -> int {
-        int n = lua_gettop(L);
-        for (int i = 1; i <= n; i++) {
-            size_t len;
-            const char* s = luaL_tolstring(L, i, &len);
-            if (i > 1) Serial.print("\t");
-            Serial.print(s);
-            lua_pop(L, 1); // remove luaL_tolstring result
-        }
-        Serial.println();
-        return 0;
-    });
+    lua_pushcfunction(L, luaSerialPrintln);
     lua_setglobal(L, "print");
 }
 

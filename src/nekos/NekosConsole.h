@@ -3,6 +3,11 @@
 #include <vector>
 #include <map>
 #include "Nekos.h"
+extern "C" {
+    #include "lua.h"
+    #include "lualib.h"
+    #include "lauxlib.h"
+}
 
 namespace nekos {
 
@@ -11,14 +16,14 @@ constexpr size_t HISTORY_SIZE = 16;
 
 class Console {
 public:
-    static void begin(unsigned long baud);
+    static void begin();
     static void poll();
 
 private:
     static char _lineBuf[SHELL_INPUT_BUFFER_SIZE];
     static size_t _lineLen;
     static size_t _cursorPos;
-
+    static lua_State* _luaState;
     static std::vector<String> _history;
     static int _histIndex;
 

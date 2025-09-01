@@ -10,6 +10,7 @@ size_t Console::_lineLen = 0;
 size_t Console::_cursorPos = 0;
 std::vector<String> Console::_history;
 int Console::_histIndex = -1;
+lua_State* Console::_luaState = nullptr;
 
 // ------------------- Helpers -------------------
 void Console::printPrompt() {
@@ -31,15 +32,17 @@ void Console::dispatchCommand(const char* line) {
 
     String commandName(cmd);
 
-    // Execute via NekosLuaLoader static methods (handles caching and PSRAM)
     if (nekos::NekosLuaLoader::exists(commandName)) {
-        nekos::NekosLuaLoader::exec(commandName, args[0] ? args : nullptr);
+        // Command exists in Lua script table
+        nekos::NekosLuaLoader::exec(commandName, args);
     } else {
-        Serial.print("Command '");
-        Serial.print(cmd);
-        Serial.println("' not found");
+        if(!line) {
+            return;
+        }
+        nekos::luaRunReplLine(_luaState, line);
     }
 }
+
 
 String Console::completeCommand(const String& prefix) {
     std::vector<String> matches;
@@ -60,8 +63,7 @@ String Console::completeCommand(const String& prefix) {
 }
 
 // ------------------- Public -------------------
-void Console::begin(unsigned long baud) {
-    Serial.begin(baud);
+void Console::begin() {
     const char* banner[] = {
         "      |\\---/|",
         "      | ,_, |",
@@ -75,6 +77,11 @@ void Console::begin(unsigned long baud) {
     for (int i = 0; banner[i]; i++) Serial.println(banner[i]);
     Serial.println();
     printPrompt();
+    if(!_luaState) {
+        _luaState = luaL_newstate();
+        luaL_openlibs(_luaState);
+        luaRegisterBindings(_luaState);
+    }
 }
 
 void Console::poll() {
