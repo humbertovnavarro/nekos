@@ -1,5 +1,5 @@
-print("\n=== Lua Scripts ===")
-if bakedScripts then
+print("=== Lua Scripts ===")
+if luaGetScripts() then
     for name, _ in pairs(bakedScripts) do
         print("- " .. name)
     end

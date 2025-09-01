@@ -1,8 +1,7 @@
-#include "NekosFreeRTOS.h"
 #include <Arduino.h>
 #include "FreeRTOS.h"
 #include "task.h"
-
+#include "NekosTime.h"
 extern "C" {
     #include "lua.h"
     #include "lualib.h"
@@ -15,7 +14,7 @@ namespace nekos {
 
 int luaDelay(lua_State* L) {
     int ms = luaL_checkinteger(L, 1);
-    vTaskDelay(pdMS_TO_TICKS(ms));
+    delay(ms);
     return 0;
 }
 
@@ -120,34 +119,14 @@ int luaGetTaskHandle(lua_State* L) {
 
 // ----------------- register -----------------
 
-void registerFreeRTOSBindings(lua_State* L) {
-    lua_newtable(L);
-
-    lua_pushcfunction(L, luaDelay);         lua_setfield(L, -2, "delay");
-    lua_pushcfunction(L, luaYield);         lua_setfield(L, -2, "yield");
-    lua_pushcfunction(L, luaMillis);        lua_setfield(L, -2, "millis");
-    lua_pushcfunction(L, luaCreateTask);    lua_setfield(L, -2, "createTask");
-    lua_pushcfunction(L, luaDeleteTask);    lua_setfield(L, -2, "deleteTask");
-    lua_pushcfunction(L, luaGetTaskName);   lua_setfield(L, -2, "getTaskName");
-    lua_pushcfunction(L, luaGetTaskHandle); lua_setfield(L, -2, "getTaskHandle");
-
-    // Set FreeRTOS global table
-    lua_setglobal(L, "FreeRTOS");
-
-    // -----------------------------------------
-    // Aliases: map globals to FreeRTOS.*
-    // -----------------------------------------
-    luaL_dostring(L,
-        "delay        = FreeRTOS.delay\n"
-        "yield        = FreeRTOS.yield\n"
-        "millis       = FreeRTOS.millis\n"
-        "createTask   = FreeRTOS.createTask\n"
-        "deleteTask   = FreeRTOS.deleteTask\n"
-        "getTaskName  = FreeRTOS.getTaskName\n"
-        "getTaskHandle= FreeRTOS.getTaskHandle\n"
-    );
+void luaRegisterTimeBindings(lua_State* L) {
+    lua_register(L, "delay",        luaDelay);
+    lua_register(L, "yield",        luaYield);
+    lua_register(L, "millis",       luaMillis);
+    lua_register(L, "createTask",   luaCreateTask);
+    lua_register(L, "deleteTask",   luaDeleteTask);
+    lua_register(L, "getTaskName",  luaGetTaskName);
+    lua_register(L, "getTaskHandle",luaGetTaskHandle);
 }
-
-
 
 } // namespace nekos

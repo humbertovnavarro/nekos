@@ -3,15 +3,15 @@ extern "C" {
     #include "lualib.h"
     #include "lauxlib.h"
 }
+
 #include "NekosSerial.h"
 #include "Arduino.h"
 #include "LuaScripts.h"
 #include "Nekos.h"
-#include "NekosLuaLoader.h"
-#include "NekosFreeRTOS.h"
+#include "NekosLuaScheduler.h"
 #include "vector"
+#include "NekosTime.h"
 namespace nekos {
-
     // -------------------------------
     // Lua: scripts[name] = true
     // -------------------------------
@@ -31,7 +31,7 @@ namespace nekos {
     // -------------------------------
     static int luaGetScript(lua_State* L) {
         const char* name = luaL_checkstring(L, 1);
-        char* script = NekosLuaLoader::getScript(name, false);
+        char* script = LuaScheduler::getScript(name, false);
         if (!script) {
             lua_pushnil(L);
             return 1;
@@ -47,13 +47,12 @@ namespace nekos {
         const char* name = luaL_checkstring(L, 1);
         const char* args = luaL_optstring(L, 2, nullptr);
 
-        char* script = NekosLuaLoader::getScript(name, true);
+        char* script = LuaScheduler::getScript(name, true);
         if (!script) {
             lua_pushboolean(L, false);
             return 1;
         }
-
-        luaExec(script, args);
+        LuaScheduler::exec(script, args);
         lua_pushboolean(L, true);
         return 1;
     }
@@ -61,12 +60,8 @@ namespace nekos {
     void luaRegisterBindings(lua_State* L) {
         // ------------------- Serial bindings -------------------
         // e.g., Serial.read(), Serial.write(), etc.
-        registerSerialBindings(L);
-
-        // ------------------- FreeRTOS bindings -------------------
-        // e.g., task creation, delay, queue access, etc.
-        registerFreeRTOSBindings(L);
-
+        luaRegisterSerialBindings(L);
+        luaRegisterTimeBindings(L);
         // ------------------- Scripts table -------------------
         // Creates Lua table `scripts` containing available script names
         lua_pushcfunction(L, luaGetScripts); // C function returning table

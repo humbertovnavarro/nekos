@@ -117,7 +117,7 @@ int luaSerialPrintf(lua_State* L) {
 }
 // -----------------------------------------------
 
-void registerSerialBindings(lua_State* L) {
+void luaRegisterSerialBindings(lua_State* L) {
     lua_newtable(L);
 
     lua_pushcfunction(L, luaSerialBegin);
