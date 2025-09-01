@@ -4,7 +4,7 @@
 #include "lua.h"
 #include "lauxlib.h"
 #include "lualib.h"
-
+#include "LuaScripts.h"
 struct ShellState {
     char line[128];
     size_t len;
@@ -57,6 +57,7 @@ void pollShell() {
 
 // ---------- Setup ----------
 void setup() {
+    initLuaScriptMap();
     Serial.begin(115200);
     while (!Serial);
     nekos::LuaScheduler::begin(16);

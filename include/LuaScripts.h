@@ -7,8 +7,9 @@
 #include "esp_heap_caps.h"
 
 static const char help_script[] PROGMEM = "print(\"=== Lua Scripts ===\")\n"
-"if luaGetScripts() then\n"
-"    for name, _ in pairs(bakedScripts) do\n"
+"scripts = getScripts()\n"
+"if scripts then\n"
+"    for _, name in pairs(scripts) do\n"
 "        print(\"- \" .. name)\n"
 "    end\n"
 "else\n"

@@ -11,79 +11,21 @@ extern "C" {
 #include "NekosLuaScheduler.h"
 #include "vector"
 #include "NekosTime.h"
+#include "NekosMeta.h"
+
 namespace nekos {
-    // -------------------------------
-    // Lua: scripts[name] = true
-    // -------------------------------
-    static int luaGetScripts(lua_State* L) {
-        lua_newtable(L);
-        if (luaScriptMap) {
-            for (auto& kv : *luaScriptMap) {
-                lua_pushboolean(L, true);
-                lua_setfield(L, -2, kv.first.c_str());
-            }
-        }
-        return 1;
-    }
-
-    // -------------------------------
-    // Lua: getScript(name) -> source text
-    // -------------------------------
-    static int luaGetScript(lua_State* L) {
-        const char* name = luaL_checkstring(L, 1);
-        char* script = LuaScheduler::getScript(name, false);
-        if (!script) {
-            lua_pushnil(L);
-            return 1;
-        }
-        lua_pushstring(L, script);
-        return 1;
-    }
-
-    // -------------------------------
-    // Lua: runScript(name, args?) -> true/false
-    // -------------------------------
-    static int luaRunScript(lua_State* L) {
-        const char* name = luaL_checkstring(L, 1);
-        const char* args = luaL_optstring(L, 2, nullptr);
-
-        char* script = LuaScheduler::getScript(name, true);
-        if (!script) {
-            lua_pushboolean(L, false);
-            return 1;
-        }
-        LuaScheduler::exec(script, args);
-        lua_pushboolean(L, true);
-        return 1;
-    }
 
     void luaRegisterBindings(lua_State* L) {
-        // ------------------- Serial bindings -------------------
-        // e.g., Serial.read(), Serial.write(), etc.
         luaRegisterSerialBindings(L);
         luaRegisterTimeBindings(L);
-        // ------------------- Scripts table -------------------
-        // Creates Lua table `scripts` containing available script names
-        lua_pushcfunction(L, luaGetScripts); // C function returning table
-        lua_call(L, 0, 1);                   // call with 0 args, expect 1 return
-        lua_setglobal(L, "scripts");         // set as global `scripts`
-
-        // ------------------- getScript(name) -------------------
-        // Lua function: returns content of a script by name
-        lua_register(L, "getScript", luaGetScript);
-
-        // ------------------- runScript(name, args?) -------------------
-        // Lua function: executes a script by name with optional arguments
-        lua_register(L, "runScript", luaRunScript);
+        luaRegisterNekosMetaBindings(L);
     }
 
     void luaExec(const char* script, const char* argline = nullptr) {
         if (!script) return;
-
         lua_State* L = luaL_newstate();
         luaL_openlibs(L);
         luaRegisterBindings(L);
-
         // Wrap the script in a function
         String wrapped = "return function(...)\n";
         wrapped += script;

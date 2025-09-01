@@ -1,6 +1,7 @@
 print("=== Lua Scripts ===")
-if luaGetScripts() then
-    for name, _ in pairs(bakedScripts) do
+scripts = getScripts()
+if scripts then
+    for _, name in pairs(scripts) do
         print("- " .. name)
     end
 else
