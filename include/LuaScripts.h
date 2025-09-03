@@ -6,15 +6,6 @@
 #include <pgmspace.h>
 #include "esp_heap_caps.h"
 
-static const char help_script[] PROGMEM = "print(\"=== Lua Scripts ===\")\n"
-"scripts = getScripts()\n"
-"if scripts then\n"
-"    for _, name in pairs(scripts) do\n"
-"        print(\"- \" .. name)\n"
-"    end\n"
-"else\n"
-"    print(\"No baked scripts available\")\n"
-"end";
 
 // Lua script map (runtime map pointing to flash strings)
 static std::map<String, const char*>* luaScriptMap = nullptr;
@@ -29,5 +20,4 @@ static void initLuaScriptMap() {
     } else {
         new (luaScriptMap) std::map<String, const char*>(); // placement new in PSRAM
     }
-    (*luaScriptMap)["help"] = help_script;
 }

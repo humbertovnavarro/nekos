@@ -151,14 +151,6 @@ bool LuaScheduler::exists(const String &name) {
     return false;
 }
 
-void LuaScheduler::listScripts() {
-    CacheLock lock(s_cacheMutex);
-    Serial.printf("[LuaScheduler] %u cached script(s):\n", (unsigned)_cacheList.size());
-    for (auto &e : _cacheList) {
-        Serial.printf("  - %s (%u bytes)\n", e.name.c_str(), (unsigned)e.size);
-    }
-}
-
 // Returns pointer to script text (owned by cache). Optionally moves to front (LRU).
 char* LuaScheduler::getScript(const String &name, bool moveToFront) {
     CacheLock lock(s_cacheMutex);
@@ -171,26 +163,6 @@ char* LuaScheduler::getScript(const String &name, bool moveToFront) {
             return it->data;
         }
     }
-    if (luaScriptMap) {
-        auto it = luaScriptMap->find(name);
-        if (it != luaScriptMap->end() && it->second) {
-            // Not cached yet — insert into cache (respect capacity)
-            size_t len = strlen(it->second) + 1;
-            char* copy = (char*)malloc(len);
-            if (copy) {
-                memcpy(copy, it->second, len);
-                _cacheList.push_front({name, copy, len});
-                // Enforce LRU capacity
-                while (_cacheList.size() > _capacity && !_cacheList.empty()) {
-                    free(_cacheList.back().data);
-                    _cacheList.pop_back();
-                }
-                return copy;
-            }
-            return (char*)it->second;
-        }
-    }
-    return nullptr;
 }
 
 
