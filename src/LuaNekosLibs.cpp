@@ -1,22 +1,24 @@
+#include "Arduino.h"
+#include "freertos/portmacro.h"
 #include "lua.hpp"
-#include "LuaNekosLibs.hpp"
+#include "projdefs.h"
 #include "display.hpp"
-#include "sys.hpp"
 #include "neopixel.hpp"
+#include "sys.hpp"
+
 void LuaOpenNekosLibs(lua_State* L) {
     lua_pushcfunction(L, [](lua_State* L) -> int {
-        int n = lua_gettop(L);
-        for (int i = 1; i <= n; ++i) {
-            if (lua_isstring(L, i)) Serial.print(lua_tostring(L, i));
-            else if (lua_isnumber(L, i)) Serial.print(lua_tonumber(L, i));
-            else if (lua_isboolean(L, i)) Serial.print(lua_toboolean(L, i) ? "true" : "false");
-            else Serial.print(luaL_typename(L, i));
-            if (i < n) Serial.print("\t");
-        }
-        Serial.println();
+        int ms = luaL_checkinteger(L, 1);
+        vTaskDelay(pdMS_TO_TICKS(ms));
         return 0;
     });
-    lua_setglobal(L, "print");
+    lua_setglobal(L, "delay");
+    lua_pushcfunction(L, [](lua_State* L) -> int {
+        TickType_t ticks = static_cast<TickType_t>(luaL_checkinteger(L, 1));
+        vTaskDelay(ticks);
+        return 0;
+    });
+    lua_setglobal(L, "delayTicks");
     luaOpenDisplayLibs(L);
     luaOpenSysLibs(L);
     luaOpenNeopixelLibs(L);

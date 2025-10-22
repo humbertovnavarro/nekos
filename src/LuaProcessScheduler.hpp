@@ -2,15 +2,16 @@
 #include "Arduino.h"
 #include "lua.hpp"
 #include "NekosLuaConfig.hpp"
+#include "FFat.h"
 
 struct LuaFileProcessParams {
     uint32_t pid;
-    FILE* source;  
+    fs::File* source;  
 };
 
 struct LuaByteCodeProcessParams {
     uint32_t pid;
-    FILE* source;
+    fs::File* source;
 };
 
 struct LuaCharProcessParams {
@@ -22,9 +23,9 @@ class LuaProcessScheduler {
 public:
     static void begin();
     static void end();
-    static int run(FILE* luaFile);
-    static int run(const char*);
-    static int runByteCode(FILE* byteCodeFile);
+    static int run(const char* code);
+    static int runFile(const char* filePath);
+    static int runByteCode(fs::File* byteCodeFile);
 private:
     static void byteCodeFileExecutor(void* pid);
     static void charCodeExecutor(void* pid);

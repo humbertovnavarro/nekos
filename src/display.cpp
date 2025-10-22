@@ -1,7 +1,11 @@
 #include "display.hpp"
+
 U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, SCL, SDA);
 
-// Lua wrappers
+// ============================
+// Basic Drawing Functions
+// ============================
+
 static int luaDisplayClear(lua_State* L) {
     u8g2.clearBuffer();
     return 0;
@@ -11,7 +15,6 @@ static int luaDisplayDrawStr(lua_State* L) {
     int x = luaL_checkinteger(L, 1);
     int y = luaL_checkinteger(L, 2);
     const char* str = luaL_checkstring(L, 3);
-
     u8g2.drawStr(x, y, str);
     return 0;
 }
@@ -23,7 +26,6 @@ static int luaDisplaySendBuffer(lua_State* L) {
 
 static int luaDisplaySetFont(lua_State* L) {
     const char* fontName = luaL_checkstring(L, 1);
-    // Example: only supports a few built-in fonts; expand as needed
     if (strcmp(fontName, "u8g2_font_ncenB08_tr") == 0)
         u8g2.setFont(u8g2_font_ncenB08_tr);
     else if (strcmp(fontName, "u8g2_font_6x10_tr") == 0)
@@ -33,7 +35,32 @@ static int luaDisplaySetFont(lua_State* L) {
     return 0;
 }
 
-// Register Lua display functions
+// ============================
+// Shapes
+// ============================
+
+static int luaDisplayDrawBox(lua_State* L) {
+    int x = luaL_checkinteger(L, 1);
+    int y = luaL_checkinteger(L, 2);
+    int w = luaL_checkinteger(L, 3);
+    int h = luaL_checkinteger(L, 4);
+    u8g2.drawBox(x, y, w, h);
+    return 0;
+}
+
+static int luaDisplayDrawFrame(lua_State* L) {
+    int x = luaL_checkinteger(L, 1);
+    int y = luaL_checkinteger(L, 2);
+    int w = luaL_checkinteger(L, 3);
+    int h = luaL_checkinteger(L, 4);
+    u8g2.drawFrame(x, y, w, h);
+    return 0;
+}
+
+// ============================
+// Library Registration
+// ============================
+
 void luaOpenDisplayLibs(lua_State* L) {
     lua_newtable(L);
 
@@ -48,6 +75,12 @@ void luaOpenDisplayLibs(lua_State* L) {
 
     lua_pushcfunction(L, luaDisplaySetFont);
     lua_setfield(L, -2, "setFont");
+
+    lua_pushcfunction(L, luaDisplayDrawBox);
+    lua_setfield(L, -2, "drawBox");
+
+    lua_pushcfunction(L, luaDisplayDrawFrame);
+    lua_setfield(L, -2, "drawFrame");
 
     lua_setglobal(L, "display");
 }

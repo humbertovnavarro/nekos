@@ -60,57 +60,6 @@ uint8_t LuaProcessScheduler::getNextCoreIndex() {
     return core;
 }
 
-// ================================
-// Job submission
-// ================================
-int LuaProcessScheduler::run(FILE* luaFile) {
-    if (!luaFile) return -1;
-    int pid = allocatePid();
-    if (pid < 0) return -1;
-    LuaFileProcessParams* p = new LuaFileProcessParams{ (uint32_t)pid, luaFile };
-    char taskName[16];
-    generateTaskName(taskName, sizeof(taskName), pid);
-    BaseType_t res = xTaskCreatePinnedToCore(
-        fileCodeExecutor,
-        taskName,
-        4096,
-        p,
-        1,
-        &taskHandles[pid],
-        getNextCoreIndex()
-    );
-    if (res != pdPASS) {
-        delete p;
-        freePid(pid);
-        return -1;
-    }
-    return pid;
-}
-
-int LuaProcessScheduler::runByteCode(FILE* byteCodeFile) {
-    if (!byteCodeFile) return -1;
-    int pid = allocatePid();
-    if (pid < 0) return -1;
-    LuaByteCodeProcessParams* p = new LuaByteCodeProcessParams{ (uint32_t)pid, byteCodeFile };
-    char taskName[16];
-    generateTaskName(taskName, sizeof(taskName), pid);
-    BaseType_t res = xTaskCreatePinnedToCore(
-        byteCodeFileExecutor,
-        taskName,
-        4096,
-        p,
-        1,
-        &taskHandles[pid],
-        getNextCoreIndex()
-    );
-    if (res != pdPASS) {
-        delete p;
-        freePid(pid);
-        return -1;
-    }
-    return pid;
-}
-
 int LuaProcessScheduler::run(const char* code) {
     if (!code) return -1;
     int pid = allocatePid();
@@ -121,7 +70,7 @@ int LuaProcessScheduler::run(const char* code) {
     BaseType_t res = xTaskCreatePinnedToCore(
         charCodeExecutor,
         taskName,
-        4096,
+        4096 + sizeof(LuaCharProcessParams),
         p,
         1,
         &taskHandles[pid],
@@ -133,72 +82,37 @@ int LuaProcessScheduler::run(const char* code) {
         return -1;
     }
     return pid;
+    delete code;
 }
 
-// ================================
-// Executors
-// ================================
-void LuaProcessScheduler::fileCodeExecutor(void* param) {
-    auto* p = reinterpret_cast<LuaFileProcessParams*>(param);
-    if (!p) {
-        vTaskDelete(nullptr);
-        return;
+int LuaProcessScheduler::runFile(const char* filePath) {
+    if (!filePath) return -1;
+    fs::File f = FFat.open(filePath, "r");
+    if (!f) {
+        Serial.printf("Failed to open file: %s\n", filePath);
+        return -1;
     }
-    fseek(p->source, 0, SEEK_END);
-    long size = ftell(p->source);
-    fseek(p->source, 0, SEEK_SET);
-    char* buffer = new char[size + 1];
-    fread(buffer, 1, size, p->source);
-    buffer[size] = '\0';
-    lua_State* L = luaL_newstate();
-    luaL_openlibs(L);
-    LuaOpenNekosLibs(L);
-    pushPidToLuaState(L, p->pid);
-    int result = luaL_loadstring(L, buffer);
-    if (result == LUA_OK) result = lua_pcall(L, 0, LUA_MULTRET, 0);
-    if (result != LUA_OK) {
-        Serial.printf("Lua file error (PID=%u): %s\n", p->pid, lua_tostring(L, -1));
-        lua_pop(L, 1);
-    } else {
-        Serial.printf("Lua file executed successfully (PID=%u)\n", p->pid);
+    size_t fileSize = f.size();
+    if (fileSize == 0) {
+        f.close();
+        Serial.printf("File is empty: %s\n", filePath);
+        return -1;
     }
-    lua_close(L);
-    delete[] buffer;
-    freePid(p->pid);
-    delete p;
-    vTaskDelete(nullptr);
+    char* buffer = (char*)malloc(fileSize + 1);
+    if (!buffer) {
+        Serial.println("Failed to allocate memory for Lua file");
+        f.close();
+        return -1;
+    }
+    size_t bytesRead = 0;
+    while (f.available() && bytesRead < fileSize) {
+        bytesRead += f.readBytes(buffer + bytesRead, fileSize - bytesRead);
+    }
+    buffer[fileSize] = '\0'; // null terminate
+    f.close();
+    int pid = run(buffer);
+    return pid;
 }
-
-void LuaProcessScheduler::byteCodeFileExecutor(void* param) {
-    auto* p = reinterpret_cast<LuaByteCodeProcessParams*>(param);
-    if (!p) {
-        vTaskDelete(nullptr);
-        return;
-    }
-    fseek(p->source, 0, SEEK_END);
-    long size = ftell(p->source);
-    fseek(p->source, 0, SEEK_SET);
-    char* buffer = new char[size];
-    fread(buffer, 1, size, p->source);
-    lua_State* L = luaL_newstate();
-    luaL_openlibs(L);
-    LuaOpenNekosLibs(L);
-    pushPidToLuaState(L, p->pid);
-    int result = luaL_loadbuffer(L, buffer, size, "bytecode_chunk");
-    if (result == LUA_OK) result = lua_pcall(L, 0, LUA_MULTRET, 0);
-    if (result != LUA_OK) {
-        Serial.printf("Lua bytecode error (PID=%lu): %s\n", p->pid, lua_tostring(L, -1));
-        lua_pop(L, 1);
-    } else {
-        Serial.printf("Lua bytecode executed successfully (PID=%lu)\n", p->pid);
-    }
-    lua_close(L);
-    delete[] buffer;
-    freePid(p->pid);
-    delete p;
-    vTaskDelete(nullptr);
-}
-
 void LuaProcessScheduler::charCodeExecutor(void* param) {
     auto* p = reinterpret_cast<LuaCharProcessParams*>(param);
     if (!p) {
