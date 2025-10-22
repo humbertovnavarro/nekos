@@ -4,13 +4,12 @@ CompileFlags:
     - -Wall
     - -Wextra
     - -Wno-unknown-warning-option
+    - -Wno-pragma-once-outside-header
     - -DPLATFORMIO=60119
     - -DARDUINO_LOLIN_S2_MINI
     - -DBOARD_HAS_PSRAM
     - -DARDUINO_USB_CDC_ON_BOOT=1
     - -DARDUINO_USB_MODE=0
-    - -DWIFI_USB_FELINE
-    - -DARDUINO_USB_CDC_ON_BOOT=1
     - -DLUA_32BITS
     - -DLUA_USE_C89
     - -DLUA_USE_LONGLONG
@@ -29,14 +28,21 @@ CompileFlags:
     - -DARDUINO=10812
     - -DARDUINO_VARIANT="lolin_s2_mini"
     - -DARDUINO_BOARD="WEMOS LOLIN S2 Mini"
-    - -DARDUINO_PARTITION_default
+    - -DARDUINO_PARTITION_4MB
     - -D
     - -I/home/kamaii/repos/nekos/include
     - -I/home/kamaii/repos/nekos/src
+    - -I/home/kamaii/repos/nekos/lib/lua-5.4.8/src
+    - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/FFat/src
+    - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/FS/src
+    - -I/home/kamaii/repos/nekos/.pio/libdeps/wifi_usb_feline/Embedded Template Library/include
+    - -I/home/kamaii/repos/nekos/.pio/libdeps/wifi_usb_feline/Embedded Template Library
     - -I/home/kamaii/repos/nekos/.pio/libdeps/wifi_usb_feline/U8g2/src
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src
-    - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src
     - -I/home/kamaii/repos/nekos/.pio/libdeps/wifi_usb_feline/Adafruit NeoPixel
+    - -I/home/kamaii/repos/nekos/.pio/libdeps/wifi_usb_feline/Adafruit TinyUSB Library/src
+    - -I/home/kamaii/repos/nekos/.pio/libdeps/wifi_usb_feline/SdFat - Adafruit Fork/src
+    - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src
     - -I/home/kamaii/repos/nekos/lib/lua/include
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s2/include/newlib/platform_include
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s2/include/freertos/include
@@ -222,7 +228,8 @@ CompileFlags:
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/variants/lolin_s2_mini
     - -I/home/kamaii/repos/nekos/lib/etl/include
     - -I/home/kamaii/repos/nekos/lib/etl
-    - -I/home/kamaii/repos/nekos/lib/lua-5.4.8/src
+    - -I/home/kamaii/repos/nekos/.pio/libdeps/wifi_usb_feline/Adafruit SPIFlash/src
+    - -I/home/kamaii/repos/nekos/.pio/libdeps/wifi_usb_feline/MIDI Library/src
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/AsyncUDP/src
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src
@@ -232,8 +239,6 @@ CompileFlags:
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/ESP32/src
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/ESPmDNS/src
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/Ethernet/src
-    - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/FFat/src
-    - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/FS/src
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/HTTPClient/src
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/HTTPUpdate/src
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/HTTPUpdateServer/src
@@ -255,93 +260,6 @@ CompileFlags:
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/WiFiClientSecure/src
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/WiFiProv/src
     - -I
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32s2/xtensa-esp32s2-elf/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32s2/share/licenses/binutils/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32s2/share/licenses/gcc/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32s2/share/licenses/gdb/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32s2/share/licenses/newlib/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32s2/lib/gcc/xtensa-esp32s2-elf/8.4.0/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32s2/lib/gcc/xtensa-esp32s2-elf/8.4.0/install-tools/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32s2/lib/gcc/xtensa-esp32s2-elf/8.4.0/plugin/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32s2/xtensa-esp32s2-elf/sys-include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32s3/xtensa-esp32s3-elf/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32s3/share/licenses/binutils/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32s3/share/licenses/gcc/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32s3/share/licenses/gdb/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32s3/share/licenses/newlib/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32s3/lib/gcc/xtensa-esp32s3-elf/8.4.0/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32s3/lib/gcc/xtensa-esp32s3-elf/8.4.0/install-tools/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32s3/lib/gcc/xtensa-esp32s3-elf/8.4.0/plugin/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32s3/xtensa-esp32s3-elf/sys-include
-    - -I/home/kamaii/.platformio/packages/toolchain-rp2040-earlephilhower/include
-    - -I/home/kamaii/.platformio/packages/toolchain-rp2040-earlephilhower/arm-none-eabi/include
-    - -I/home/kamaii/.platformio/packages/toolchain-rp2040-earlephilhower/lib/gcc/arm-none-eabi/14.3.0/include
-    - -I/home/kamaii/.platformio/packages/toolchain-rp2040-earlephilhower/lib/gcc/arm-none-eabi/14.3.0/install-tools/include
-    - -I/home/kamaii/.platformio/packages/toolchain-rp2040-earlephilhower/lib/gcc/arm-none-eabi/14.3.0/plugin/include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp@8.4.0+2021r2-patch5/riscv32-esp-elf/include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp@8.4.0+2021r2-patch5/share/licenses/binutils/include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp@8.4.0+2021r2-patch5/share/licenses/gcc/include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp@8.4.0+2021r2-patch5/share/licenses/gdb/include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp@8.4.0+2021r2-patch5/share/licenses/newlib/include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp@8.4.0+2021r2-patch5/lib/gcc/riscv32-esp-elf/8.4.0/include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp@8.4.0+2021r2-patch5/lib/gcc/riscv32-esp-elf/8.4.0/install-tools/include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp@8.4.0+2021r2-patch5/lib/gcc/riscv32-esp-elf/8.4.0/plugin/include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp@8.4.0+2021r2-patch5/riscv32-esp-elf/sys-include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp/picolibc/include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp/riscv32-esp-elf/include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp/share/licenses/binutils/include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp/share/licenses/gcc/include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp/share/licenses/newlib/include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp/share/licenses/gcc/libstdc++-v3/include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp/picolibc/lib/gcc/riscv32-esp-elf/14.2.0/include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp/lib/gcc/riscv32-esp-elf/14.2.0/include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp/lib/gcc/riscv32-esp-elf/14.2.0/install-tools/include
-    - -I/home/kamaii/.platformio/packages/toolchain-riscv32-esp/lib/gcc/riscv32-esp-elf/14.2.0/plugin/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp-elf/picolibc/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp-elf/xtensa-esp-elf/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp-elf/share/licenses/binutils/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp-elf/share/licenses/gcc/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp-elf/share/licenses/newlib/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp-elf/share/licenses/gcc/libstdc++-v3/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp-elf/picolibc/lib/gcc/xtensa-esp-elf/14.2.0/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp-elf/lib/gcc/xtensa-esp-elf/14.2.0/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp-elf/lib/gcc/xtensa-esp-elf/14.2.0/install-tools/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp-elf/lib/gcc/xtensa-esp-elf/14.2.0/plugin/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32/share/licenses/binutils/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32/share/licenses/gcc/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32/share/licenses/gdb/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32/share/licenses/newlib/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32/lib/gcc/xtensa-esp32-elf/8.4.0/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32/lib/gcc/xtensa-esp32-elf/8.4.0/install-tools/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32/lib/gcc/xtensa-esp32-elf/8.4.0/plugin/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa-esp32/xtensa-esp32-elf/sys-include
-    - -I/home/kamaii/.platformio/packages/toolchain-gccarmnoneeabi@1.90301.200702/include
-    - -I/home/kamaii/.platformio/packages/toolchain-gccarmnoneeabi@1.90301.200702/arm-none-eabi/include
-    - -I/home/kamaii/.platformio/packages/toolchain-gccarmnoneeabi@1.90301.200702/lib/gcc/arm-none-eabi/9.3.1/include
-    - -I/home/kamaii/.platformio/packages/toolchain-gccarmnoneeabi@1.90301.200702/lib/gcc/arm-none-eabi/9.3.1/install-tools/include
-    - -I/home/kamaii/.platformio/packages/toolchain-gccarmnoneeabi@1.90301.200702/lib/gcc/arm-none-eabi/9.3.1/plugin/include
-    - -I/home/kamaii/.platformio/packages/toolchain-gccarmnoneeabi/include
-    - -I/home/kamaii/.platformio/packages/toolchain-gccarmnoneeabi/arm-none-eabi/include
-    - -I/home/kamaii/.platformio/packages/toolchain-gccarmnoneeabi/lib/gcc/arm-none-eabi/12.3.1/include
-    - -I/home/kamaii/.platformio/packages/toolchain-gccarmnoneeabi/lib/gcc/arm-none-eabi/12.3.1/install-tools/include
-    - -I/home/kamaii/.platformio/packages/toolchain-gccarmnoneeabi/lib/gcc/arm-none-eabi/12.3.1/plugin/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa@1.40802.0/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa@1.40802.0/xtensa-lx106-elf/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa@1.40802.0/lib/gcc/xtensa-lx106-elf/4.8.2/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa@1.40802.0/lib/gcc/xtensa-lx106-elf/4.8.2/install-tools/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa@1.40802.0/lib/gcc/xtensa-lx106-elf/4.8.2/plugin/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa/xtensa-lx106-elf/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa/lib/gcc/xtensa-lx106-elf/10.3.0/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa/lib/gcc/xtensa-lx106-elf/10.3.0/install-tools/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa/lib/gcc/xtensa-lx106-elf/10.3.0/plugin/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa32/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa32/xtensa-esp32-elf/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa32/lib/gcc/xtensa-esp32-elf/8.4.0/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa32/lib/gcc/xtensa-esp32-elf/8.4.0/install-tools/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa32/lib/gcc/xtensa-esp32-elf/8.4.0/plugin/include
-    - -I/home/kamaii/.platformio/packages/toolchain-xtensa32/xtensa-esp32-elf/sys-include
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/cores/esp32
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/variants/esp32s2
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries
@@ -352,6 +270,9 @@ CompileFlags:
     - -I/home/kamaii/.platformio/packages/framework-espidf/components/esp_rom/include
     - -I/home/kamaii/.platformio/packages/framework-espidf/components/soc/include
     - -I/home/kamaii/.platformio/packages/framework-espidf/components/soc/esp32s2/include
+    - -isystem /home/kamaii/.platformio/packages/framework-arduinoespressif32/cores/esp32
+    - -isystem /home/kamaii/.platformio/packages/framework-arduinoespressif32/variants/esp32s2
+    - -isystem /home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries
     - -include esp32s2-hal.h
   Remove: [-m*, -f*, -O*]
   CompilationDatabase: .
@@ -362,7 +283,7 @@ Index:
   Background: true
   StandardLibrary: Yes
 FallbackFlags:
-  - -std=gnu++11
+  - -std=gnu++17
 ---
 If:
   PathMatch: .*\.c$
@@ -372,4 +293,4 @@ CompileFlags:
 If:
   PathMatch: .*\.cpp$
 CompileFlags:
-  Add: [-std=gnu++11]
+  Add: [-std=gnu++17]

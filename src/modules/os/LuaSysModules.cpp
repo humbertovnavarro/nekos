@@ -1,8 +1,9 @@
-#include "sys.hpp"
+#include "lua.hpp"
 #include "Esp.h"
 #include "esp32-hal.h"
 #include "esp_flash.h"
 #include "esp_system.h"
+#include "LuaSysModules.hpp"
 
 // ================================
 // System info functions

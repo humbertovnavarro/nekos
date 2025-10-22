@@ -1,0 +1,36 @@
+#pragma once
+#include "Arduino.h"
+#include "lua.hpp"
+
+#define MAX_LUA_PROCESSES 15
+#define LUA_STREAM_BUFFER_CHUNK_SIZE 512
+
+struct LuaProcess {
+    const char* luaCFilePath;
+    uint32_t pid;
+    TaskHandle_t taskHandle;
+    char streamBuffer[LUA_STREAM_BUFFER_CHUNK_SIZE];
+};
+
+struct LuaProcessStartOptions {
+    uint32_t stackSize;
+    uint32_t priority;
+    int32_t affinity = -1;
+};
+
+class LuaProcessScheduler {
+public:
+    static LuaProcess* luaProcesses;
+    static SemaphoreHandle_t schedulerMutex;
+    static void begin();
+    static void end();
+    static int run(const char* basePath, LuaProcessStartOptions options = {4096, 1, -1});
+    static void byteCodeFileExecutor(void* pid);
+    static int allocatePid();
+    static void freePid(uint32_t pid);
+    static void generateTaskName(char* buffer, size_t size, uint32_t pid) {
+        snprintf(buffer, size, "%lu", (unsigned long)pid);
+    }
+    static uint8_t getNextCoreIndex();
+    static void pushPidToLuaState(lua_State* L, uint32_t pid);
+};

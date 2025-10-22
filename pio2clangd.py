@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Generate .clangd from .vscode/c_cpp_properties.json and platformio.ini,
-and update .vscode/settings.json with clangd configuration.
+with system includes for Arduino/FreeRTOS to suppress indirect include warnings.
 """
 
 import json, re, os
@@ -45,14 +45,8 @@ def map_board_to_variant(board: str):
 # --- Detect include paths ---
 def detect_includes(board_variant: str):
     includes = []
+    system_includes = []
     pio = Path.home() / ".platformio/packages"
-
-    # Toolchain includes
-    for pkg in pio.glob("toolchain-*"):
-        for sub in pkg.glob("**/include"):
-            includes.append(f"-I{sub}")
-        for sub in pkg.glob("**/sys-include"):
-            includes.append(f"-I{sub}")
 
     # Arduino framework includes
     for fw in pio.glob("framework-arduinoespressif32"):
@@ -60,8 +54,15 @@ def detect_includes(board_variant: str):
             path = fw / d
             if path.exists():
                 includes.append(f"-I{path}")
+                system_includes.append(f"-isystem {path}")
 
-    # ESP-IDF includes
+    # ESP-IDF FreeRTOS includes
+    for fw in pio.glob("framework-espidf"):
+        base = fw / "components/freertos/include"
+        if base.exists():
+            system_includes.append(f"-isystem {base}")
+
+    # ESP-IDF general includes
     for fw in pio.glob("framework-espidf"):
         base = fw / "components"
         subdirs = [
@@ -77,8 +78,7 @@ def detect_includes(board_variant: str):
             p = base / s
             if p.exists():
                 includes.append(f"-I{p}")
-
-    return list(dict.fromkeys(includes))
+    return includes, system_includes
 
 # --- Load c_cpp_properties.json ---
 data = load_json_with_comments(vscode_path)
@@ -99,8 +99,9 @@ normalized_includes = [
     for p in include_paths
 ]
 
-# --- Add auto-detected includes ---
-normalized_includes.extend(detect_includes(variant))
+# --- Auto-detect includes ---
+auto_includes, system_includes = detect_includes(variant)
+normalized_includes.extend(auto_includes)
 
 # --- Forced HAL include based on board variant ---
 hal_include_map = {
@@ -119,19 +120,25 @@ lines = [
     "    - -Wall",
     "    - -Wextra",
     "    - -Wno-unknown-warning-option",
+    "    - -Wno-pragma-once-outside-header",
 ]
 
 # Add defines
 for d in defines:
     lines.append(f"    - -D{d}")
 
-# Add includes
+# Add normal includes
 for inc in normalized_includes:
     lines.append(f"    - {inc}")
+
+# Add system includes to suppress Arduino/FreeRTOS warnings
+for sys_inc in system_includes:
+    lines.append(f"    - {sys_inc}")
 
 # Add forced HAL include
 lines.append(f"    - {forced_include}")
 
+# Cleanup and fallback flags
 lines += [
     "  Remove: [-m*, -f*, -O*]",
     "  CompilationDatabase: .",
@@ -182,4 +189,3 @@ settings.update(clangd_config)
 settings_path.parent.mkdir(parents=True, exist_ok=True)
 settings_path.write_text(json.dumps(settings, indent=2), encoding="utf-8")
 print(f"✅ Updated {settings_path} with clangd settings")
-
