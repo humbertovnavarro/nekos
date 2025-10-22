@@ -1,1 +1,0 @@
-#define MAX_LUA_PROCESSES 512

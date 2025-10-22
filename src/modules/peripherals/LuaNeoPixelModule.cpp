@@ -1,6 +1,7 @@
-#include "neopixel.hpp"
 #include "Adafruit_NeoPixel.h"
 #include "lua.hpp"
+#include "LuaNeoPixelModule.hpp"
+
 Adafruit_NeoPixel neopixel(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
 
 int luaNeoSetPixel(lua_State* L) {
@@ -32,7 +33,6 @@ int luaNeoSetBrightness(lua_State* L) {
 
 
 void luaOpenNeopixelLibs(lua_State* L) {
-    // Create neopixel table
     lua_newtable(L);
     lua_pushcfunction(L, luaNeoSetPixel);
     lua_setfield(L, -2, "setPixel");
@@ -44,4 +44,3 @@ void luaOpenNeopixelLibs(lua_State* L) {
     lua_setfield(L, -2, "setBrightness");
     lua_setglobal(L, "neopixel");
 }
-
