@@ -17,13 +17,6 @@ String resolvePath(const String& path) {
     return currentDir + "/" + path;
 }
 
-void runLuaFile(const String& path) {
-    unsigned long start = micros();
-    LuaProcessScheduler::run(path.c_str());
-    unsigned long end = micros();
-    Serial.printf("[LuaExec] Ran '%s' in %luus\n", path.c_str(), end - start);
-}
-
 void printPrompt() {
     Serial.printf("root:%s$ ", currentDir.c_str());
 }
@@ -226,7 +219,7 @@ void handleCommand(String cmd) {
     else if (name == "help") {
         Serial.println("Commands: ls, cd, cat, rm, echo, pwd, reboot, top, pkill, mount, unmount");
     }
-    else if (name.startsWith("/")) runLuaFile(name);
+    else if (name.startsWith("/")) LuaProcessScheduler::run(name.c_str());
     else Serial.printf("%s: command not found\n", name.c_str());
 }
 

@@ -149,21 +149,17 @@ void LuaProcessScheduler::byteCodeFileExecutor(void* arg) {
     vTaskDelete(nullptr);
 }
 
-
 int LuaProcessScheduler::run(const char* luaCFilePath, LuaProcessStartOptions opts) {
     LuaProcess* proc = allocateProcessSlot();
     if (!proc) {
         Serial.println("[LuaScheduler] No available process slots");
         return -1;
     }
-
     proc->pid = allocatePid();
-    proc->luaCFilePath = luaCFilePath;
     proc->taskHandle = nullptr;
-
+    strlcpy(proc->luaCFilePath, luaCFilePath, 64); 
     char taskName[16];
     generateTaskName(taskName, sizeof(taskName), proc->pid);
-
     BaseType_t res = xTaskCreatePinnedToCore(
         LuaProcessScheduler::byteCodeFileExecutor,
         taskName,
@@ -180,6 +176,5 @@ int LuaProcessScheduler::run(const char* luaCFilePath, LuaProcessStartOptions op
         freePid(proc->pid);
         return -1;
     }
-    
     return proc->pid;
 }

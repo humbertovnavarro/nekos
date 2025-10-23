@@ -1,7 +1,7 @@
 #pragma once
 #include "Arduino.h"
 #include "lua.hpp"
-
+#define MAX_PATH_SIZE 64
 #define MAX_LUA_PROCESSES 16
 #define LUA_STREAM_BUFFER_CHUNK_SIZE 1024
 #define LUA_DEFAULT_STACK_SIZE 4096
@@ -11,7 +11,8 @@
 struct LuaProcess {
     bool free = true;
     lua_State* L;
-    const char* luaCFilePath;
+    char luaCFilePath[64];
+    size_t luaCFilePathSize;
     uint32_t pid;
     TaskHandle_t taskHandle;
     char streamBuffer[LUA_STREAM_BUFFER_CHUNK_SIZE];
