@@ -9,6 +9,8 @@
 #define NO_AFFINITY -1
 
 struct LuaProcess {
+    bool free = true;
+    lua_State* L;
     const char* luaCFilePath;
     uint32_t pid;
     TaskHandle_t taskHandle;

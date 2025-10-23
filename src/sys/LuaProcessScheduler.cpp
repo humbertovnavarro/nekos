@@ -2,17 +2,7 @@
 #include "lua.hpp"
 #include "FFat.h"
 #include "LuaProcessScheduler.hpp"
-#include "LuaModule.hpp"
-#include "modules/os/LuaFreeRTOSModule.hpp"
-#include "modules/peripherals/LuaSerialModule.hpp"
-#include "modules/os/LuaFileSystemModule.hpp"
-#include "modules/peripherals/LuaGPIOModule.hpp"
-#include "modules/peripherals/LuaNeoPixelModule.hpp"
-#include "modules/peripherals//LuaDisplayModule.hpp"
-
-// ============================================================
-// Static Members
-// ============================================================
+#include "LuaStateFactory.hpp"
 LuaProcess* LuaProcessScheduler::luaProcesses = nullptr;
 SemaphoreHandle_t LuaProcessScheduler::schedulerMutex = nullptr;
 
@@ -46,9 +36,8 @@ int LuaProcessScheduler::allocatePid() {
 }
 
 void LuaProcessScheduler::freePid(uint32_t pid) {
-    (void)pid; // No-op
+    (void)pid;
 }
-
 
 uint8_t LuaProcessScheduler::getNextCoreIndex() {
 #ifdef ARDUINO_ARCH_ESP32
@@ -94,6 +83,7 @@ void LuaProcessScheduler::byteCodeFileExecutor(void* arg) {
         vTaskDelete(nullptr);
         return;
     }
+    
     File luac = FFat.open(proc->luaCFilePath, "r");
     if (!luac) {
         Serial.printf("[LuaExec %lu] Failed to open %s\n", proc->pid, proc->luaCFilePath);
@@ -101,7 +91,9 @@ void LuaProcessScheduler::byteCodeFileExecutor(void* arg) {
         vTaskDelete(nullptr);
         return;
     }
+
     lua_State* L = luaL_newstate();
+
     if (!L) {
         Serial.printf("[LuaExec %lu] Failed to create Lua state\n", proc->pid);
         luac.close();
@@ -110,14 +102,7 @@ void LuaProcessScheduler::byteCodeFileExecutor(void* arg) {
         return;
     }
 
-    luaL_openlibs(L);
-
-    luaFreeRTOSModule.expose(L);
-    luaFileSystemModule.expose(L);
-    luaSerialModule.expose(L);
-    luaGpioModule.expose(L);
-    luaNeoPixelModule.expose(L);
-    luaDisplayModule.expose(L);
+    luaStateFactory(L);
 
     lua_pushinteger(L, (lua_Integer)proc->pid);
     lua_setglobal(L, "__PID");
@@ -157,10 +142,7 @@ void LuaProcessScheduler::byteCodeFileExecutor(void* arg) {
         Serial.printf("[LuaExec %lu] Runtime error: %s\n", proc->pid,
                       lua_tostring(L, -1));
         lua_pop(L, 1);
-    } else {
-        Serial.printf("[LuaExec %lu] Execution finished successfully\n", proc->pid);
     }
-
     lua_close(L);
     luac.close();
     freeProcessSlot(proc);
@@ -198,8 +180,6 @@ int LuaProcessScheduler::run(const char* luaCFilePath, LuaProcessStartOptions op
         freePid(proc->pid);
         return -1;
     }
-
-    Serial.printf("[LuaScheduler] Started Lua task (pid=%lu) for %s\n",
-                  (unsigned long)proc->pid, luaCFilePath);
+    
     return proc->pid;
 }
