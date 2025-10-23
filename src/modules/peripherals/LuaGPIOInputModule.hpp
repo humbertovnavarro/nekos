@@ -1,11 +1,14 @@
 #include "Arduino.h"
 #include "lua.hpp"
+#include "sys/LuaModule.hpp"
 
+// ==============================
+// Pin Configuration
+// ==============================
 #define GPIO_UP     9
 #define GPIO_DOWN   18
 #define GPIO_LEFT   11
 #define GPIO_RIGHT  7
-
 #define DEBOUNCE_MS 20
 
 enum Input {
@@ -36,22 +39,19 @@ static Button buttons[] = {
 // ==============================
 // Setup and Debounce Logic
 // ==============================
-void inputBegin() {
+static void inputBegin() {
     for (auto &b : buttons)
         pinMode(b.pin, INPUT_PULLUP);
-    Serial.begin(115200);
 }
 
 static bool readDebounced(Button &b) {
     bool reading = digitalRead(b.pin);
-    if (reading != b.lastReading) {
+    if (reading != b.lastReading)
         b.lastChangeTime = millis();
-    }
 
     if ((millis() - b.lastChangeTime) > DEBOUNCE_MS) {
-        if (reading != b.stableState) {
+        if (reading != b.stableState)
             b.stableState = reading;
-        }
     }
 
     b.lastReading = reading;
@@ -66,23 +66,26 @@ static Input getInputDirection() {
     return NONE;
 }
 
-static int luaInputRead(lua_State* L) {
-    Input dir = getInputDirection();
-    const char* result = "none";
-    switch (dir) {
-        case UP:    result = "up"; break;
-        case DOWN:  result = "down"; break;
-        case LEFT:  result = "left"; break;
-        case RIGHT: result = "right"; break;
-        default: break;
-    }
-    lua_pushstring(L, result);
-    return 1;
-}
+// ==============================
+// Lua Module Definition
+// ==============================
+inline LuaModule luaInputModule("input", [](lua_State* L) {
+    LuaModule::begin(L);
 
-void luaOpenInputLibs(lua_State* L) {
-    lua_newtable(L);
-    lua_pushcfunction(L, luaInputRead);
-    lua_setfield(L, -2, "read");
-    lua_setglobal(L, "input");
-}
+    // Initialize pins
+    inputBegin();
+
+    LuaModule::addFunction(L, "read", [](lua_State* L) -> int {
+        Input dir = getInputDirection();
+        const char* result = "none";
+        switch (dir) {
+            case UP:    result = "up"; break;
+            case DOWN:  result = "down"; break;
+            case LEFT:  result = "left"; break;
+            case RIGHT: result = "right"; break;
+            default:    result = "none"; break;
+        }
+        lua_pushstring(L, result);
+        return 1;
+    });
+});

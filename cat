@@ -1,0 +1,11 @@
+src/modules/
+src/modules/os
+src/modules/os/LuaFreeRTOSModule.hpp
+src/modules/os/LuaSysModules.hpp
+src/modules/os/LuaFileSystemModule.hpp
+src/modules/peripherals
+src/modules/peripherals/LuaDisplayModule.hpp
+src/modules/peripherals/LuaNeoPixelModule.hpp
+src/modules/peripherals/LuaSerialModule.hpp
+src/modules/peripherals/LuaGPIOInputModule.hpp
+src/modules/peripherals/LuaGPIOModule.hpp

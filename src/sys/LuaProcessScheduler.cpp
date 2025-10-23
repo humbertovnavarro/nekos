@@ -1,9 +1,13 @@
-#include "LuaProcessScheduler.hpp"
 #include "Arduino.h"
 #include "lua.hpp"
 #include "FFat.h"
-
-extern void LuaOpenNekosLibs(lua_State* L);
+#include "LuaProcessScheduler.hpp"
+#include "LuaModule.hpp"
+#include "modules/os/LuaFreeRTOSModule.hpp"
+#include "modules/peripherals/LuaSerialModule.hpp"
+#include "modules/os/LuaFileSystemModule.hpp"
+#include "modules/peripherals/LuaGPIOModule.hpp"
+#include "modules/peripherals/LuaNeoPixelModule.hpp"
 
 // ============================================================
 // Static Members
@@ -11,15 +15,31 @@ extern void LuaOpenNekosLibs(lua_State* L);
 LuaProcess* LuaProcessScheduler::luaProcesses = nullptr;
 SemaphoreHandle_t LuaProcessScheduler::schedulerMutex = nullptr;
 
-// ============================================================
-// Internal helpers
-// ============================================================
-
 static bool processUsed[MAX_LUA_PROCESSES] = { false };
 
-// ============================================================
-// PID management
-// ============================================================
+void LuaProcessScheduler::begin() {
+    registerLuaModule(luafreeRTOSModule);
+    registerLuaModule(luaFileSystemModule);
+    registerLuaModule(luaGpioModule);
+    registerLuaModule(luaNeopixelModule);
+    registerLuaModule(luaSerialModule);
+
+    luaProcesses = (LuaProcess*) malloc(sizeof(LuaProcess) * MAX_LUA_PROCESSES);
+    memset(luaProcesses, 0, sizeof(LuaProcess) * MAX_LUA_PROCESSES);
+    memset(processUsed, 0, sizeof(processUsed));
+    Serial.println("[LuaScheduler] Initialized");
+}
+
+void LuaProcessScheduler::end() {
+    for (int i = 0; i < MAX_LUA_PROCESSES; ++i) {
+        if (processUsed[i] && luaProcesses[i].taskHandle) {
+            vTaskDelete(luaProcesses[i].taskHandle);
+            processUsed[i] = false;
+        }
+    }
+    Serial.println("[LuaScheduler] Shutdown complete");
+}
+
 
 int LuaProcessScheduler::allocatePid() {
     static uint32_t nextPid = 1;
@@ -34,9 +54,6 @@ void LuaProcessScheduler::freePid(uint32_t pid) {
     (void)pid; // No-op
 }
 
-// ============================================================
-// Core assignment (round-robin)
-// ============================================================
 
 uint8_t LuaProcessScheduler::getNextCoreIndex() {
 #ifdef ARDUINO_ARCH_ESP32
@@ -48,9 +65,6 @@ uint8_t LuaProcessScheduler::getNextCoreIndex() {
 #endif
 }
 
-// ============================================================
-// Process slot management
-// ============================================================
 
 static LuaProcess* allocateProcessSlot() {
     taskENTER_CRITICAL(nullptr);
@@ -78,10 +92,6 @@ static void freeProcessSlot(LuaProcess* proc) {
     taskEXIT_CRITICAL(nullptr);
 }
 
-// ============================================================
-// FreeRTOS Lua executor (stream from .luac)
-// ============================================================
-
 void LuaProcessScheduler::byteCodeFileExecutor(void* arg) {
     LuaProcess* proc = static_cast<LuaProcess*>(arg);
     if (!proc || !proc->luaCFilePath) {
@@ -89,7 +99,6 @@ void LuaProcessScheduler::byteCodeFileExecutor(void* arg) {
         vTaskDelete(nullptr);
         return;
     }
-
     File luac = FFat.open(proc->luaCFilePath, "r");
     if (!luac) {
         Serial.printf("[LuaExec %lu] Failed to open %s\n", proc->pid, proc->luaCFilePath);
@@ -97,7 +106,6 @@ void LuaProcessScheduler::byteCodeFileExecutor(void* arg) {
         vTaskDelete(nullptr);
         return;
     }
-
     lua_State* L = luaL_newstate();
     if (!L) {
         Serial.printf("[LuaExec %lu] Failed to create Lua state\n", proc->pid);
@@ -107,6 +115,8 @@ void LuaProcessScheduler::byteCodeFileExecutor(void* arg) {
         return;
     }
     luaL_openlibs(L);
+    // Expose module system to lua runtime.
+    exposeRequire(L);
     lua_pushinteger(L, (lua_Integer)proc->pid);
     lua_setglobal(L, "__PID");
 
@@ -155,9 +165,6 @@ void LuaProcessScheduler::byteCodeFileExecutor(void* arg) {
     vTaskDelete(nullptr);
 }
 
-// ============================================================
-// Run a Lua task from a .luac file
-// ============================================================
 
 int LuaProcessScheduler::run(const char* luaCFilePath, LuaProcessStartOptions opts) {
     LuaProcess* proc = allocateProcessSlot();
@@ -193,42 +200,4 @@ int LuaProcessScheduler::run(const char* luaCFilePath, LuaProcessStartOptions op
     Serial.printf("[LuaScheduler] Started Lua task (pid=%lu) for %s\n",
                   (unsigned long)proc->pid, luaCFilePath);
     return proc->pid;
-}
-
-// ============================================================
-// begin() / end()
-// ============================================================
-
-void LuaProcessScheduler::begin() {
-    if (!schedulerMutex)
-        schedulerMutex = xSemaphoreCreateMutex();
-
-    luaProcesses = (LuaProcess*) heap_caps_malloc(
-        sizeof(LuaProcess) * MAX_LUA_PROCESSES, MALLOC_CAP_SPIRAM * 0.25
-    );
-
-    if (!luaProcesses) {
-        luaProcesses = (LuaProcess*) malloc(sizeof(LuaProcess) * MAX_LUA_PROCESSES);
-        if (!luaProcesses) {
-            Serial.println("[LuaScheduler] ❌ Failed to allocate Lua process pool");
-            return;
-        }
-        Serial.printf("[LuaScheduler] ⚠️ Using DRAM for %d processes\n", MAX_LUA_PROCESSES);
-    } else {
-        Serial.printf("[LuaScheduler] ✅ Allocated %d Lua processes in PSRAM\n", MAX_LUA_PROCESSES);
-    }
-
-    memset(luaProcesses, 0, sizeof(LuaProcess) * MAX_LUA_PROCESSES);
-    memset(processUsed, 0, sizeof(processUsed));
-    Serial.println("[LuaScheduler] Initialized");
-}
-
-void LuaProcessScheduler::end() {
-    for (int i = 0; i < MAX_LUA_PROCESSES; ++i) {
-        if (processUsed[i] && luaProcesses[i].taskHandle) {
-            vTaskDelete(luaProcesses[i].taskHandle);
-            processUsed[i] = false;
-        }
-    }
-    Serial.println("[LuaScheduler] Shutdown complete");
 }

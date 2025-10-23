@@ -5,36 +5,23 @@
 #define LUA_COMPILE_BUFFER_SIZE 512
 
 bool compileLuaFileIfNeeded(const char* basePath) {
-    Serial.printf("[LuaCompiler] Checking for existing .luac: %s.luac\n", basePath);
-
-    // Check if .luac already exists
-    File luacFile = FFat.open(String(basePath) + ".luac", "r");
-    if (luacFile) {
-        luacFile.close();
-        Serial.printf("[LuaCompiler] ✅ .luac already exists: %s.luac\n", basePath);
-        return true;
-    }
-
-    Serial.printf("[LuaCompiler] Compiling %s.lua → %s.luac\n", basePath, basePath);
-
-    // Open source .lua file
     File luaFile = FFat.open(String(basePath) + ".lua", "r");
     if (!luaFile) {
         Serial.printf("[LuaCompiler] ⚠️ Source Lua file not found: %s.lua\n", basePath);
         return false;
     }
+
     Serial.printf("[LuaCompiler] Opened source file: %s.lua (%u bytes available)\n", basePath, luaFile.size());
 
-    // Open .luac file for writing
     File outFile = FFat.open(String(basePath) + ".luac", "w");
     if (!outFile) {
         Serial.printf("[LuaCompiler] ⚠️ Failed to open output file: %s.luac\n", basePath);
         luaFile.close();
         return false;
     }
+
     Serial.printf("[LuaCompiler] Output file opened: %s.luac\n", basePath);
 
-    // Initialize Lua state
     lua_State* L = luaL_newstate();
     luaL_openlibs(L);
     Serial.printf("[LuaCompiler] Lua state created\n");

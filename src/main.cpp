@@ -65,12 +65,6 @@ void setup() {
 }
 
 void loop() {
-    unsigned long startTime = micros();
     LuaProcessScheduler::run("/boot.luac");
-    unsigned long endTime = micros();
-    unsigned long duration = endTime - startTime;
-    Serial.print("Lua process time: ");
-    Serial.print(duration);
-    Serial.println(" µs");
-    vTaskDelay(10 / portTICK_PERIOD_MS);
+    vTaskDelay(500 / portTICK_PERIOD_MS);
 }

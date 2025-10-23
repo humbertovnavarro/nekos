@@ -1,8 +1,8 @@
 #include "FreeRTOS.h"
 #include "freertos/task.h"
-#include "../LuaModule.hpp"
+#include "sys/LuaModule.hpp"
 
-inline LuaModule freertosModule("freertos", [](lua_State* L) {
+inline LuaModule luafreeRTOSModule("freertos", [](lua_State* L) {
         LuaModule::begin(L);
 
         LuaModule::addFunction(L, "delay", [](lua_State* L) -> int {
@@ -17,8 +17,3 @@ inline LuaModule freertosModule("freertos", [](lua_State* L) {
             return 0;
         });
 });
-
-
-inline void registerFreeRTOSModule() {
-    registerLuaModule(freertosModule);
-}

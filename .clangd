@@ -39,10 +39,8 @@ CompileFlags:
     - -I/home/kamaii/repos/nekos/.pio/libdeps/wifi_usb_feline/Embedded Template Library
     - -I/home/kamaii/repos/nekos/.pio/libdeps/wifi_usb_feline/U8g2/src
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src
-    - -I/home/kamaii/repos/nekos/.pio/libdeps/wifi_usb_feline/Adafruit NeoPixel
-    - -I/home/kamaii/repos/nekos/.pio/libdeps/wifi_usb_feline/Adafruit TinyUSB Library/src
-    - -I/home/kamaii/repos/nekos/.pio/libdeps/wifi_usb_feline/SdFat - Adafruit Fork/src
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src
+    - -I/home/kamaii/repos/nekos/.pio/libdeps/wifi_usb_feline/Adafruit NeoPixel
     - -I/home/kamaii/repos/nekos/lib/lua/include
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s2/include/newlib/platform_include
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s2/include/freertos/include
@@ -228,8 +226,6 @@ CompileFlags:
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/variants/lolin_s2_mini
     - -I/home/kamaii/repos/nekos/lib/etl/include
     - -I/home/kamaii/repos/nekos/lib/etl
-    - -I/home/kamaii/repos/nekos/.pio/libdeps/wifi_usb_feline/Adafruit SPIFlash/src
-    - -I/home/kamaii/repos/nekos/.pio/libdeps/wifi_usb_feline/MIDI Library/src
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/ArduinoOTA/src
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/AsyncUDP/src
     - -I/home/kamaii/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src

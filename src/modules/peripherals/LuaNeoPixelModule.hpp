@@ -1,19 +1,60 @@
-#include "lua.hpp"
 #include "Adafruit_NeoPixel.h"
-#define GREEN         0,0,5,0
-#define RED           0,5,0,0
-#define BLUE          0,0,0,5
-#define WHITE         0,2,2,2
-#define YELLOW        0,2,2,0
-#define OFF           0,0,0,0
-#define BRIGHT_GREEN  0,0,20,0
-#define BRIGHT_RED    0,20,0,0
-#define BRIGHT_BLUE   0,0,0,20
-#define BRIGHT_WHITE  0,35,35,35
-#define FLASHLIGHT    0,255,255,255
-#define LED_PIN 12
-#define LED_COUNT 1
-#define SCL 35
-#define SDA 33
-extern Adafruit_NeoPixel neopixel;
-void luaOpenNeopixelLibs(lua_State* L);
+#include "lua.hpp"
+#include "sys/LuaModule.hpp"
+
+// =======================================
+// NeoPixel Setup
+// =======================================
+#ifndef LED_PIN
+#define LED_PIN 4
+#endif
+
+#ifndef LED_COUNT
+#define LED_COUNT 8
+#endif
+
+static Adafruit_NeoPixel neopixel(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
+
+// =======================================
+// Lua Module Definition
+// =======================================
+inline LuaModule luaNeopixelModule("neopixel", [](lua_State* L) {
+    LuaModule::begin(L);
+
+    // Initialize the LED strip
+    neopixel.begin();
+    neopixel.show(); // Clear all LEDs on start
+
+    LuaModule::addFunction(L, "setPixel", [](lua_State* L) -> int {
+        int index = luaL_checkinteger(L, 1);
+        int r = luaL_checkinteger(L, 2);
+        int g = luaL_checkinteger(L, 3);
+        int b = luaL_checkinteger(L, 4);
+
+        if (index >= 0 && index < neopixel.numPixels()) {
+            neopixel.setPixelColor(index, neopixel.Color(r, g, b));
+        }
+        return 0;
+    });
+
+    LuaModule::addFunction(L, "show", [](lua_State* L) -> int {
+        neopixel.show();
+        return 0;
+    });
+
+    LuaModule::addFunction(L, "clear", [](lua_State* L) -> int {
+        neopixel.clear();
+        return 0;
+    });
+
+    LuaModule::addFunction(L, "setBrightness", [](lua_State* L) -> int {
+        int level = luaL_checkinteger(L, 1);
+        neopixel.setBrightness(level);
+        return 0;
+    });
+
+    LuaModule::addFunction(L, "numPixels", [](lua_State* L) -> int {
+        lua_pushinteger(L, neopixel.numPixels());
+        return 1;
+    });
+});
