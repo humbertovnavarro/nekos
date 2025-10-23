@@ -1,7 +1,7 @@
 #include "Arduino.h"
 #include "sys/LuaModule.hpp"
 
-inline LuaModule luaSerialModule("serial", [](lua_State* L) {
+LuaModule luaSerialModule("serial", [](lua_State* L) {
     LuaModule::begin(L);
 
     // ----------------------------
@@ -86,4 +86,6 @@ inline LuaModule luaSerialModule("serial", [](lua_State* L) {
         lua_pushlstring(L, s.c_str(), s.length());
         return 1;
     });
+
+    return 1;
 });

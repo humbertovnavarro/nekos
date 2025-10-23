@@ -2,7 +2,7 @@
 #include "FFat.h"
 #include "sys/LuaModule.hpp"
 
-inline LuaModule luaFileSystemModule("fs", [](lua_State* L) {
+LuaModule luaFileSystemModule("fs", [](lua_State* L) {
     LuaModule::begin(L);
 
     // Mount FFat
@@ -153,4 +153,5 @@ inline LuaModule luaFileSystemModule("fs", [](lua_State* L) {
 
         return 1;
     });
+    return 1;
 });

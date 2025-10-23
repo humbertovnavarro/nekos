@@ -1,30 +1,12 @@
-#include "Adafruit_NeoPixel.h"
+#pragma once
 #include "lua.hpp"
 #include "sys/LuaModule.hpp"
-
-// =======================================
-// NeoPixel Setup
-// =======================================
-#ifndef LED_PIN
-#define LED_PIN 4
-#endif
-
-#ifndef LED_COUNT
-#define LED_COUNT 8
-#endif
-
-static Adafruit_NeoPixel neopixel(LED_COUNT, LED_PIN, NEO_GRB + NEO_KHZ800);
-
+#include "drivers/neopixel.hpp"
 // =======================================
 // Lua Module Definition
 // =======================================
-inline LuaModule luaNeopixelModule("neopixel", [](lua_State* L) {
+LuaModule luaNeoPixelModule("neopixel", [](lua_State* L) {
     LuaModule::begin(L);
-
-    // Initialize the LED strip
-    neopixel.begin();
-    neopixel.show(); // Clear all LEDs on start
-
     LuaModule::addFunction(L, "setPixel", [](lua_State* L) -> int {
         int index = luaL_checkinteger(L, 1);
         int r = luaL_checkinteger(L, 2);
@@ -57,4 +39,6 @@ inline LuaModule luaNeopixelModule("neopixel", [](lua_State* L) {
         lua_pushinteger(L, neopixel.numPixels());
         return 1;
     });
+
+    return 1;
 });

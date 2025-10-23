@@ -20,8 +20,6 @@
 Provides FreeRTOS timing utilities.
 
 ```lua
-local freertos = require("freertos")
-
 -- delay 500 ms
 freertos.delay(500)
 
@@ -41,8 +39,6 @@ freertos.delayTicks(10)
 Provides system info for ESP32/Arduino.
 
 ```lua
-local sys = require("sys")
-
 print("Uptime:", sys.uptime())
 print("Free heap:", sys.freeHeap())
 print("CPU cores:", sys.cpuCores())
@@ -71,8 +67,6 @@ print("SDK version:", sys.sdkVersion())
 Filesystem operations with FFat.
 
 ```lua
-local fs = require("fs")
-
 fs.mount(true)
 
 -- Write and read
@@ -109,8 +103,6 @@ fs.unmount()
 Control U8g2 OLED.
 
 ```lua
-local display = require("display")
-
 display.clear()
 display.setFont("u8g2_font_ncenB08_tr")
 display.drawStr(0, 10, "Hello World")
@@ -135,13 +127,12 @@ display.sendBuffer()
 Control WS2812 LEDs.
 
 ```lua
-local np = require("neopixel")
 
-for i=0, np.numPixels()-1 do
-    np.setPixel(i, 255, 0, 0)
+for i=0, neopixel.numPixels()-1 do
+    neopixel.setPixel(i, 255, 0, 0)
 end
-np.show()
-np.clear()
+neopixel.show()
+neopixel.clear()
 ```
 
 | Function                   | Description          |
@@ -159,8 +150,6 @@ np.clear()
 Serial communication.
 
 ```lua
-local serial = require("serial")
-
 serial.println("Hello")
 serial.print(123)
 local b = serial.read()
@@ -201,8 +190,6 @@ print("Direction:", dir) -- "up", "down", "left", "right", "none"
 General-purpose pin control.
 
 ```lua
-local gpio = require("gpio")
-
 gpio.mode(5, "output")
 gpio.write(5, true)
 print(gpio.read(5))

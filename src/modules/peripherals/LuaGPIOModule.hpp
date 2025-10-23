@@ -1,3 +1,4 @@
+#pragma once
 #include "Arduino.h"
 #include "sys/LuaModule.hpp"
 
@@ -5,7 +6,7 @@
 // GPIO Lua Module
 // ============================
 
-inline LuaModule luaGpioModule("gpio", [](lua_State* L) {
+LuaModule luaGpioModule("gpio", [](lua_State* L) {
     LuaModule::begin(L);
 
     // gpio.mode(pin, mode)
@@ -49,4 +50,6 @@ inline LuaModule luaGpioModule("gpio", [](lua_State* L) {
         digitalWrite(pin, !current);
         return 0;
     });
+
+    return 1;
 });

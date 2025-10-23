@@ -1,15 +1,7 @@
-#include "U8g2lib.h"
+#pragma once
 #include "sys/LuaModule.hpp"
-// ============================
-// Display Setup
-// ============================
-
-U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, U8X8_PIN_NONE, SCL, SDA);
-
-// ============================
-// Lua Module Registration
-// ============================
-inline LuaModule luaDisplayModule("display", [](lua_State* L) {
+#include "drivers/u8g2.hpp"
+LuaModule luaDisplayModule("display", [](lua_State* L) {
     LuaModule::begin(L);
 
     LuaModule::addFunction(L, "clear", [](lua_State* L) -> int {
@@ -58,4 +50,5 @@ inline LuaModule luaDisplayModule("display", [](lua_State* L) {
         u8g2.drawFrame(x, y, w, h);
         return 0;
     });
+    return 1;
 });

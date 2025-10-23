@@ -4,7 +4,7 @@
 #include <unordered_map>
 #include "lua.hpp"
 
-using LuaModuleFactory = void(*)(lua_State*);
+using LuaModuleFactory = int(*)(lua_State*);
 
 class LuaModule {
 public:
@@ -17,9 +17,8 @@ public:
     static void addInteger(lua_State* L, const char* name, lua_Integer value);
     static void addBoolean(lua_State* L, const char* name, bool value);
     static void addNumber(lua_State* L, const char* name, lua_Number value);
+    inline void expose(lua_State* L) {
+        this->moduleFactory(L);
+        lua_setglobal(L, this->name);
+    }
 };
-
-extern std::unordered_map<std::string, std::function<void(lua_State* L)>> luaModuleMap;
-void registerLuaModule(const LuaModule& mod);
-int luaRequire(lua_State* L);
-void exposeRequire(lua_State* L);

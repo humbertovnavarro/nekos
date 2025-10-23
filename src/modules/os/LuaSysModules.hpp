@@ -8,7 +8,7 @@
 // ===================================
 // Lua System Module (ESP32)
 // ===================================
-inline LuaModule sysLuaModule("sys", [](lua_State* L) {
+LuaModule sysLuaModule("sys", [](lua_State* L) {
     LuaModule::begin(L);
 
     LuaModule::addFunction(L, "uptime", [](lua_State* L) -> int {
@@ -65,4 +65,6 @@ inline LuaModule sysLuaModule("sys", [](lua_State* L) {
         lua_pushstring(L, ESP.getSdkVersion());
         return 1;
     });
+
+    return 1;
 });

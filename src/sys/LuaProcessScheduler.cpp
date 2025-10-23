@@ -8,6 +8,7 @@
 #include "modules/os/LuaFileSystemModule.hpp"
 #include "modules/peripherals/LuaGPIOModule.hpp"
 #include "modules/peripherals/LuaNeoPixelModule.hpp"
+#include "modules/peripherals//LuaDisplayModule.hpp"
 
 // ============================================================
 // Static Members
@@ -18,12 +19,6 @@ SemaphoreHandle_t LuaProcessScheduler::schedulerMutex = nullptr;
 static bool processUsed[MAX_LUA_PROCESSES] = { false };
 
 void LuaProcessScheduler::begin() {
-    registerLuaModule(luafreeRTOSModule);
-    registerLuaModule(luaFileSystemModule);
-    registerLuaModule(luaGpioModule);
-    registerLuaModule(luaNeopixelModule);
-    registerLuaModule(luaSerialModule);
-
     luaProcesses = (LuaProcess*) malloc(sizeof(LuaProcess) * MAX_LUA_PROCESSES);
     memset(luaProcesses, 0, sizeof(LuaProcess) * MAX_LUA_PROCESSES);
     memset(processUsed, 0, sizeof(processUsed));
@@ -114,9 +109,16 @@ void LuaProcessScheduler::byteCodeFileExecutor(void* arg) {
         vTaskDelete(nullptr);
         return;
     }
+
     luaL_openlibs(L);
-    // Expose module system to lua runtime.
-    exposeRequire(L);
+
+    luaFreeRTOSModule.expose(L);
+    luaFileSystemModule.expose(L);
+    luaSerialModule.expose(L);
+    luaGpioModule.expose(L);
+    luaNeoPixelModule.expose(L);
+    luaDisplayModule.expose(L);
+
     lua_pushinteger(L, (lua_Integer)proc->pid);
     lua_setglobal(L, "__PID");
 

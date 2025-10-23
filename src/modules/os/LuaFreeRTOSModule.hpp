@@ -2,7 +2,7 @@
 #include "freertos/task.h"
 #include "sys/LuaModule.hpp"
 
-inline LuaModule luafreeRTOSModule("freertos", [](lua_State* L) {
+LuaModule luaFreeRTOSModule("freertos", [](lua_State* L) {
         LuaModule::begin(L);
 
         LuaModule::addFunction(L, "delay", [](lua_State* L) -> int {
@@ -16,4 +16,6 @@ inline LuaModule luafreeRTOSModule("freertos", [](lua_State* L) {
             vTaskDelay(ticks);
             return 0;
         });
+
+        return 1;
 });

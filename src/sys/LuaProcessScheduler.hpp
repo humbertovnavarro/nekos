@@ -2,8 +2,11 @@
 #include "Arduino.h"
 #include "lua.hpp"
 
-#define MAX_LUA_PROCESSES 15
-#define LUA_STREAM_BUFFER_CHUNK_SIZE 512
+#define MAX_LUA_PROCESSES 16
+#define LUA_STREAM_BUFFER_CHUNK_SIZE 1024
+#define LUA_DEFAULT_STACK_SIZE 4096
+#define LUA_DEFAULT_PRIORITY 1
+#define NO_AFFINITY -1
 
 struct LuaProcess {
     const char* luaCFilePath;
@@ -24,7 +27,7 @@ public:
     static SemaphoreHandle_t schedulerMutex;
     static void begin();
     static void end();
-    static int run(const char* basePath, LuaProcessStartOptions options = {4096, 1, -1});
+    static int run(const char* basePath, LuaProcessStartOptions options = {LUA_DEFAULT_STACK_SIZE, LUA_DEFAULT_PRIORITY, NO_AFFINITY});
     static void byteCodeFileExecutor(void* pid);
     static int allocatePid();
     static void freePid(uint32_t pid);
