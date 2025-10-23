@@ -241,32 +241,38 @@ void setup() {
     Serial.println("[LuaExec] Boot script launched.");
 }
 
-void printPrompt(bool newline = true) {
-    if (newline) Serial.println();
-    Serial.printf("root:%s$ ", currentDir.c_str());
-}
-
 void loop() {
     static bool needPrompt = true;
+    static char c;
+
+    // Print prompt if needed
     if (needPrompt) {
-        printPrompt(false);
+        Serial.printf("root:%s$ ", currentDir.c_str());
         needPrompt = false;
     }
+
+    // Read serial input
     while (Serial.available()) {
-        char c = Serial.read();
-        if (c == '\r' || c == '\n') {
+        c = Serial.read();
+
+        // Normalize line endings: ignore '\r', handle '\n'
+        if (c == '\r') continue;
+
+        if (c == '\n') {
             Serial.println();  // move to next line
             handleCommand(inputBuffer);
             inputBuffer = "";
             needPrompt = true;
         }
+        // Handle backspace / delete
         else if (c == 8 || c == 127) {
             if (!inputBuffer.isEmpty()) {
                 inputBuffer.remove(inputBuffer.length() - 1);
-                Serial.print("\b \b"); // erase last char
+                Serial.print("\b \b");  // erase last char
             }
         }
-        else if (isprint(c)) {
+        // Printable characters
+        else if (isPrintable(c)) {
             inputBuffer += c;
             Serial.write(c);
         }
