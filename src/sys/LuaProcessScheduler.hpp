@@ -31,7 +31,7 @@ public:
     static void begin();
     static void end();
     static int run(const char* basePath, LuaProcessStartOptions options = {LUA_DEFAULT_STACK_SIZE, LUA_DEFAULT_PRIORITY, NO_AFFINITY});
-    static void byteCodeFileExecutor(void* pid);
+    static void runFileTask(void* pid);
     static int allocatePid();
     static void freePid(uint32_t pid);
     static void generateTaskName(char* buffer, size_t size, uint32_t pid) {

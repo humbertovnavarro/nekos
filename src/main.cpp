@@ -154,7 +154,6 @@ void cmd_cd(const String& arg) {
 }
 
 void cmd_echo(const String& arg) {
-    // echo 'text' > file.lua
     int redir = arg.indexOf('>');
     if (redir == -1) {
         Serial.println(arg);
@@ -226,11 +225,6 @@ void handleCommand(String cmd) {
 void setup() {
     initializeDrivers();
     prepareLuaEnvironment();
-    LuaProcessScheduler::run("/boot.luac", {
-        .stackSize = 16384,
-        .priority = 1,
-        .affinity = 0
-    });
     Serial.println("[LuaExec] Boot script launched.");
 }
 

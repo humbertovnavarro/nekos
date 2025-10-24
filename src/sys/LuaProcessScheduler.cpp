@@ -76,41 +76,46 @@ static void freeProcessSlot(LuaProcess* proc) {
     taskEXIT_CRITICAL(nullptr);
 }
 
-void LuaProcessScheduler::byteCodeFileExecutor(void* arg) {
+void LuaProcessScheduler::runFileTask(void* arg) {
     LuaProcess* proc = static_cast<LuaProcess*>(arg);
     if (!proc || !proc->luaCFilePath) {
         Serial.println("[LuaExec] Invalid process or file");
         vTaskDelete(nullptr);
         return;
     }
-    
-    File luac = FFat.open(proc->luaCFilePath, "r");
-    if (!luac) {
+
+    File luaFile = FFat.open(proc->luaCFilePath, "rb");
+    if (!luaFile) {
         Serial.printf("[LuaExec %lu] Failed to open %s\n", proc->pid, proc->luaCFilePath);
         freeProcessSlot(proc);
         vTaskDelete(nullptr);
         return;
     }
 
-    lua_State* L = luaL_newstate();
+    // Detect whether it's bytecode or text
+    uint8_t firstByte = luaFile.peek();
+    const char* mode = (firstByte == 0x1B) ? "b" : "t"; // 0x1B = ESC (Lua binary header)
 
+    lua_State* L = luaL_newstate();
     if (!L) {
         Serial.printf("[LuaExec %lu] Failed to create Lua state\n", proc->pid);
-        luac.close();
+        luaFile.close();
         freeProcessSlot(proc);
         vTaskDelete(nullptr);
         return;
     }
 
+    // Load standard libs and custom modules
     luaStateFactory(L);
 
+    // Pass PID to Lua
     lua_pushinteger(L, (lua_Integer)proc->pid);
     lua_setglobal(L, "__PID");
 
     struct ReaderCtx {
         File* file;
         uint8_t buffer[512];
-    } ctx = { &luac };
+    } ctx = { &luaFile };
 
     auto reader = [](lua_State*, void* data, size_t* size) -> const char* {
         ReaderCtx* ctx = static_cast<ReaderCtx*>(data);
@@ -120,18 +125,18 @@ void LuaProcessScheduler::byteCodeFileExecutor(void* arg) {
             return nullptr;
         }
         *size = n;
-        return (const char*)ctx->buffer;
+        return reinterpret_cast<const char*>(ctx->buffer);
     };
 
     char chunkName[32];
     snprintf(chunkName, sizeof(chunkName), "pid_%lu", (unsigned long)proc->pid);
 
-    int loadStatus = lua_load(L, reader, &ctx, chunkName, "b");
+    int loadStatus = lua_load(L, reader, &ctx, chunkName, mode);
     if (loadStatus != LUA_OK) {
-        Serial.printf("[LuaExec %lu] Load error: %s\n", proc->pid,
-                      lua_tostring(L, -1));
+        Serial.printf("[LuaExec %lu] Load error in %s: %s\n",
+                      proc->pid, proc->luaCFilePath, lua_tostring(L, -1));
         lua_close(L);
-        luac.close();
+        luaFile.close();
         freeProcessSlot(proc);
         vTaskDelete(nullptr);
         return;
@@ -139,15 +144,19 @@ void LuaProcessScheduler::byteCodeFileExecutor(void* arg) {
 
     int callStatus = lua_pcall(L, 0, LUA_MULTRET, 0);
     if (callStatus != LUA_OK) {
-        Serial.printf("[LuaExec %lu] Runtime error: %s\n", proc->pid,
-                      lua_tostring(L, -1));
+        Serial.printf("[LuaExec %lu] Runtime error in %s: %s\n",
+                      proc->pid, proc->luaCFilePath, lua_tostring(L, -1));
         lua_pop(L, 1);
     }
+
+    // Clean up and free process slot
+    lua_gc(L, LUA_GCCOLLECT, 0);
     lua_close(L);
-    luac.close();
+    luaFile.close();
     freeProcessSlot(proc);
     vTaskDelete(nullptr);
 }
+
 
 int LuaProcessScheduler::run(const char* luaCFilePath, LuaProcessStartOptions opts) {
     LuaProcess* proc = allocateProcessSlot();
@@ -161,7 +170,7 @@ int LuaProcessScheduler::run(const char* luaCFilePath, LuaProcessStartOptions op
     char taskName[16];
     generateTaskName(taskName, sizeof(taskName), proc->pid);
     BaseType_t res = xTaskCreatePinnedToCore(
-        LuaProcessScheduler::byteCodeFileExecutor,
+        LuaProcessScheduler::runFileTask,
         taskName,
         opts.stackSize,
         proc,
