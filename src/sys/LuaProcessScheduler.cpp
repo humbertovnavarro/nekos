@@ -3,6 +3,8 @@
 #include "FFat.h"
 #include "LuaProcessScheduler.hpp"
 #include "LuaStateFactory.hpp"
+#include "LuaPSRamAllocater.hpp"
+
 LuaProcess* LuaProcessScheduler::luaProcesses = nullptr;
 SemaphoreHandle_t LuaProcessScheduler::schedulerMutex = nullptr;
 
@@ -25,7 +27,6 @@ void LuaProcessScheduler::end() {
     Serial.println("[LuaScheduler] Shutdown complete");
 }
 
-
 int LuaProcessScheduler::allocatePid() {
     static uint32_t nextPid = 1;
     if (!schedulerMutex) schedulerMutex = xSemaphoreCreateMutex();
@@ -33,10 +34,6 @@ int LuaProcessScheduler::allocatePid() {
     uint32_t pid = nextPid++;
     xSemaphoreGive(schedulerMutex);
     return pid;
-}
-
-void LuaProcessScheduler::freePid(uint32_t pid) {
-    (void)pid;
 }
 
 uint8_t LuaProcessScheduler::getNextCoreIndex() {
@@ -78,45 +75,39 @@ static void freeProcessSlot(LuaProcess* proc) {
 
 void LuaProcessScheduler::runFileTask(void* arg) {
     LuaProcess* proc = static_cast<LuaProcess*>(arg);
-    if (!proc || !proc->luaCFilePath) {
+    if (!proc || !proc->filePath) {
         Serial.println("[LuaExec] Invalid process or file");
         vTaskDelete(nullptr);
         return;
     }
 
-    File luaFile = FFat.open(proc->luaCFilePath, "rb");
+    File luaFile = FFat.open(proc->filePath, "rb");
     if (!luaFile) {
-        Serial.printf("[LuaExec %lu] Failed to open %s\n", proc->pid, proc->luaCFilePath);
+        Serial.printf("[LuaExec %lu] Failed to open %s\n", proc->pid, proc->filePath);
         freeProcessSlot(proc);
         vTaskDelete(nullptr);
         return;
     }
 
-    // Detect whether it's bytecode or text
     uint8_t firstByte = luaFile.peek();
     const char* mode = (firstByte == 0x1B) ? "b" : "t"; // 0x1B = ESC (Lua binary header)
-
-    lua_State* L = luaL_newstate();
-    if (!L) {
-        Serial.printf("[LuaExec %lu] Failed to create Lua state\n", proc->pid);
-        luaFile.close();
-        freeProcessSlot(proc);
-        vTaskDelete(nullptr);
-        return;
+    if (!proc->L) {
+        proc->L = lua_newstate(lua_psram_allocator, nullptr);
+        if (!proc->L) {
+            Serial.println("[Lua] Failed to create Lua state");
+            vTaskDelete(nullptr);
+            return;
+        }
     }
 
-    // Load standard libs and custom modules
-    luaStateFactory(L);
-
-    // Pass PID to Lua
-    lua_pushinteger(L, (lua_Integer)proc->pid);
-    lua_setglobal(L, "__PID");
+    luaStateFactory(proc->L);
+    lua_pushinteger(proc->L, (lua_Integer)proc->pid);
+    lua_setglobal(proc->L, "__PID");
 
     struct ReaderCtx {
         File* file;
         uint8_t buffer[512];
     } ctx = { &luaFile };
-
     auto reader = [](lua_State*, void* data, size_t* size) -> const char* {
         ReaderCtx* ctx = static_cast<ReaderCtx*>(data);
         size_t n = ctx->file->read(ctx->buffer, sizeof(ctx->buffer));
@@ -130,35 +121,32 @@ void LuaProcessScheduler::runFileTask(void* arg) {
 
     char chunkName[32];
     snprintf(chunkName, sizeof(chunkName), "pid_%lu", (unsigned long)proc->pid);
-
-    int loadStatus = lua_load(L, reader, &ctx, chunkName, mode);
+    int loadStatus = lua_load(proc->L, reader, &ctx, chunkName, mode);
     if (loadStatus != LUA_OK) {
-        Serial.printf("[LuaExec %lu] Load error in %s: %s\n",
-                      proc->pid, proc->luaCFilePath, lua_tostring(L, -1));
-        lua_close(L);
+        Serial.printf("[LuaExec %u] Load error in %s: %s\n",
+                      proc->pid, proc->filePath, lua_tostring(proc->L, -1));
+        lua_close(proc->L);
         luaFile.close();
         freeProcessSlot(proc);
         vTaskDelete(nullptr);
         return;
     }
 
-    int callStatus = lua_pcall(L, 0, LUA_MULTRET, 0);
+    int callStatus = lua_pcall(proc->L, 0, LUA_MULTRET, 0);
     if (callStatus != LUA_OK) {
-        Serial.printf("[LuaExec %lu] Runtime error in %s: %s\n",
-                      proc->pid, proc->luaCFilePath, lua_tostring(L, -1));
-        lua_pop(L, 1);
+        Serial.printf("[LuaExec %u] Runtime error in %s: %s\n",
+                      proc->pid, proc->filePath, lua_tostring(proc->L, -1));
+        lua_pop(proc->L, 1);
     }
 
-    // Clean up and free process slot
-    lua_gc(L, LUA_GCCOLLECT, 0);
-    lua_close(L);
+    lua_close(proc->L);
     luaFile.close();
     freeProcessSlot(proc);
     vTaskDelete(nullptr);
 }
 
 
-int LuaProcessScheduler::run(const char* luaCFilePath, LuaProcessStartOptions opts) {
+int LuaProcessScheduler::run(const char* filePath, LuaProcessStartOptions opts) {
     LuaProcess* proc = allocateProcessSlot();
     if (!proc) {
         Serial.println("[LuaScheduler] No available process slots");
@@ -166,7 +154,7 @@ int LuaProcessScheduler::run(const char* luaCFilePath, LuaProcessStartOptions op
     }
     proc->pid = allocatePid();
     proc->taskHandle = nullptr;
-    strlcpy(proc->luaCFilePath, luaCFilePath, 64); 
+    strlcpy(proc->filePath, filePath, 64); 
     char taskName[16];
     generateTaskName(taskName, sizeof(taskName), proc->pid);
     BaseType_t res = xTaskCreatePinnedToCore(
@@ -178,11 +166,9 @@ int LuaProcessScheduler::run(const char* luaCFilePath, LuaProcessStartOptions op
         &proc->taskHandle,
         opts.affinity == -1 ? getNextCoreIndex() : opts.affinity
     );
-
     if (res != pdPASS) {
         Serial.printf("[LuaScheduler] Failed to start Lua task (pid=%lu)\n", (unsigned long)proc->pid);
         freeProcessSlot(proc);
-        freePid(proc->pid);
         return -1;
     }
     return proc->pid;

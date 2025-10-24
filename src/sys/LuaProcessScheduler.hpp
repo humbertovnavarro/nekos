@@ -11,8 +11,8 @@
 struct LuaProcess {
     bool free = true;
     lua_State* L;
-    char luaCFilePath[64];
-    size_t luaCFilePathSize;
+    char filePath[64];
+    size_t filePathSize;
     uint32_t pid;
     TaskHandle_t taskHandle;
     char streamBuffer[LUA_STREAM_BUFFER_CHUNK_SIZE];
