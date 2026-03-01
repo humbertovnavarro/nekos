@@ -1,0 +1,6 @@
+[submodule "lib/lib/esp32-arduino-lib-builder"]
+	path = lib/lib/esp32-arduino-lib-builder
+	url = https://github.com/espressif/esp32-arduino-lib-builder.git
+[submodule "lib/esp32-arduino-lib-builder"]
+	path = lib/esp32-arduino-lib-builder
+	url = https://github.com/espressif/esp32-arduino-lib-builder.git
