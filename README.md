@@ -4,6 +4,7 @@ lib/esp32-arduino-lib-builder is needed for arduino usb api.
 # Setup
 - If you are not using USB functionality, you may skip this.
 - git submodule update --init --recursive
+- note, remove extra dir from root CMakeLists.txt**
 
 # Requirements
 - VSCodium
