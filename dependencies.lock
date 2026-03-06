@@ -364,7 +364,7 @@ dependencies:
       type: service
     version: 1.2.0
   espressif/esp_secure_cert_mgr:
-    component_hash: 054e3b074b5cd50cacfcbdb5e7ccc2b4d6d26c1016268297c6027897e28928ca
+    component_hash: 2587797e68395edb67f30a7f9a7ce6a529492fa5fa6468592e912bc7ea34dbae
     dependencies:
     - name: idf
       require: private
@@ -372,7 +372,7 @@ dependencies:
     source:
       registry_url: https://components.espressif.com
       type: service
-    version: 2.9.0
+    version: 2.9.1
   espressif/jsmn:
     component_hash: d80350c41bbaa827c98a25b6072df00884e72f54885996fab4a4f0aebce6b6c3
     dependencies:
@@ -404,7 +404,7 @@ dependencies:
       type: service
     version: 1.0.3
   espressif/libsodium:
-    component_hash: 6ee084dee7a4d664498274870aa65391c9ec9d38dcdb34d2ad2b8518726f8b5e
+    component_hash: ec52dce5da4af52b1908a0e23e2cf8f492edea090450e51f0d1fbe1108b6d58e
     dependencies:
     - name: idf
       require: private
@@ -412,9 +412,9 @@ dependencies:
     source:
       registry_url: https://components.espressif.com
       type: service
-    version: 1.0.20~3
+    version: 1.0.20~4
   espressif/mdns:
-    component_hash: 043f989435fd88f771c70507bfde854380c259a8fec8c0d60bcfd8714f16960e
+    component_hash: 7c0fa01a1cd0e72a87ec1928c3b661c0a3a9034a6d3a69dcf4850db8c6f272db
     dependencies:
     - name: idf
       require: private
@@ -422,7 +422,7 @@ dependencies:
     source:
       registry_url: https://components.espressif.com
       type: service
-    version: 1.10.0
+    version: 1.10.1
   espressif/network_provisioning:
     component_hash: ef2e10182fd1861e68b821491916327c25416ca7ae70e5a6e43313dbc71fe993
     dependencies:
@@ -447,6 +447,16 @@ dependencies:
       registry_url: https://components.espressif.com
       type: service
     version: 1.4.6
+  georgik/lua:
+    component_hash: 10698fd2d729b63cca8b882e219c3fa3bd8a9adea26f814f2febb624d0385c23
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 5.5.0~7
   idf:
     source:
       type: idf
@@ -463,7 +473,8 @@ dependencies:
     version: 1.20.4
 direct_dependencies:
 - espressif/arduino-esp32
+- georgik/lua
 - idf
-manifest_hash: bb586ec925aec51fa9a2f4da694bbf1dd0c5ef5f4f654f1ef56d33c48f29627b
+manifest_hash: 9f04d4137a825e640b4feba566e66276453652539a6646b15c54fb927ddda67e
 target: esp32s3
 version: 2.0.0
