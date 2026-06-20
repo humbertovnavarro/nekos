@@ -1,10 +1,12 @@
 #include "esp32_s3_touch_amoled_2_06.h"
+#include "font/lv_font.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "lvgl.h"
 #include "etl/string.h"
 #include <cstddef>
 #include "counter.hpp"
+#include "styles/styles.hpp"
 
 static struct {
     lv_obj_t *screen;
@@ -58,7 +60,7 @@ static void build_ui()
     s_ctx.count_label = lv_label_create(s_ctx.screen);
     lv_label_set_text(s_ctx.count_label, "0");
     lv_obj_set_style_text_color(s_ctx.count_label, lv_color_hex(0xFFFFFF), 0);
-    lv_obj_set_style_text_font(s_ctx.count_label, &lv_font_montserrat_48, 0);
+    lv_obj_set_style_text_font(s_ctx.count_label, &lv_font_montserrat_14, 0);
     lv_obj_align(s_ctx.count_label, LV_ALIGN_CENTER, 0, -20);
 
     lv_obj_t *divider = lv_obj_create(s_ctx.screen);
@@ -68,21 +70,10 @@ static void build_ui()
     lv_obj_set_style_radius(divider, 0, 0);
     lv_obj_align(divider, LV_ALIGN_CENTER, 0, 18);
 
-    static lv_style_t btn_style;
-    lv_style_init(&btn_style);
-    lv_style_set_radius(&btn_style, 12);
-    lv_style_set_border_width(&btn_style, 0);
-    lv_style_set_text_font(&btn_style, &lv_font_montserrat_14);
-    lv_style_set_pad_hor(&btn_style, 24);
-    lv_style_set_pad_ver(&btn_style, 12);
-
-    static lv_style_t btn_pressed;
-    lv_style_init(&btn_pressed);
-    lv_style_set_transform_scale(&btn_pressed, 950); // 0.95×
 
     s_ctx.btn_dec = lv_btn_create(s_ctx.screen);
-    lv_obj_add_style(s_ctx.btn_dec, &btn_style, 0);
-    lv_obj_add_style(s_ctx.btn_dec, &btn_pressed, LV_STATE_PRESSED);
+    lv_obj_add_style(s_ctx.btn_dec, &style::button, 0);
+    lv_obj_add_style(s_ctx.btn_dec, &style::button_pressed, LV_STATE_PRESSED);
     lv_obj_set_style_bg_color(s_ctx.btn_dec, lv_color_hex(0xE74C3C), 0);
     lv_obj_set_size(s_ctx.btn_dec, 72, 56);
     lv_obj_align(s_ctx.btn_dec, LV_ALIGN_BOTTOM_MID, -90, -30);
@@ -93,8 +84,8 @@ static void build_ui()
     lv_obj_center(lbl_dec);
 
     s_ctx.btn_reset = lv_btn_create(s_ctx.screen);
-    lv_obj_add_style(s_ctx.btn_reset, &btn_style, 0);
-    lv_obj_add_style(s_ctx.btn_reset, &btn_pressed, LV_STATE_PRESSED);
+    lv_obj_add_style(s_ctx.btn_reset, &style::button, 0);
+    lv_obj_add_style(s_ctx.btn_reset, &style::button_pressed, LV_STATE_PRESSED);
     lv_obj_set_style_bg_color(s_ctx.btn_reset, lv_color_hex(0x3A3A5C), 0);
     lv_obj_set_size(s_ctx.btn_reset, 72, 56);
     lv_obj_align(s_ctx.btn_reset, LV_ALIGN_BOTTOM_MID, 0, -30);
@@ -105,8 +96,8 @@ static void build_ui()
     lv_obj_center(lbl_rst);
 
     s_ctx.btn_inc = lv_btn_create(s_ctx.screen);
-    lv_obj_add_style(s_ctx.btn_inc, &btn_style, 0);
-    lv_obj_add_style(s_ctx.btn_inc, &btn_pressed, LV_STATE_PRESSED);
+    lv_obj_add_style(s_ctx.btn_inc, &style::button, 0);
+    lv_obj_add_style(s_ctx.btn_inc, &style::button_pressed, LV_STATE_PRESSED);
     lv_obj_set_style_bg_color(s_ctx.btn_inc, lv_color_hex(0x27AE60), 0);
     lv_obj_set_size(s_ctx.btn_inc, 72, 56);
     lv_obj_align(s_ctx.btn_inc, LV_ALIGN_BOTTOM_MID, 90, -30);

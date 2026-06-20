@@ -9,9 +9,11 @@
 #include "nvs_flash.h"
 #include "soc/gpio_num.h"
 #include <cstddef>
+#include "styles/styles.hpp"
 
 #define BOOT_BTN_GPIO   GPIO_NUM_0
 #define LONG_PRESS_MS   1000
+
 static const uint32_t BUF_BYTES = 410 * 502 * sizeof(lv_color_t);
 
 extern "C" void app_main(void) {
@@ -27,7 +29,7 @@ extern "C" void app_main(void) {
   bsp_display_cfg_t bsp_display_cfg = {
       .lvgl_port_cfg =
         {
-            .task_priority = 2,
+            .task_priority = 4,
             .task_stack = 16384,
             .task_affinity = 1,
             .task_max_sleep_ms = 64,
@@ -45,5 +47,6 @@ extern "C" void app_main(void) {
   };
 
   bsp_display_start_with_config(&bsp_display_cfg);
+  style::init();
   create_task(&launcher::launcher_task_opts);
 }
