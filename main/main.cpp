@@ -1,15 +1,7 @@
-#include "application_types.hpp"
-#include "applications/launcher.hpp"
-#include "driver/gpio.h"
+#include "esp32_s3_touch_amoled_2_06.h"
 #include "esp_event.h"
-#include "esp_heap_caps.h"
-#include "esp_log.h"
-#include "esp_timer.h"
-#include "freertos/idf_additions.h"
 #include "nvs_flash.h"
-#include "soc/gpio_num.h"
-#include <cstddef>
-#include "styles/styles.hpp"
+#include "applications/launcher.hpp"
 
 #define BOOT_BTN_GPIO   GPIO_NUM_0
 #define LONG_PRESS_MS   1000
@@ -18,6 +10,7 @@ static const uint32_t BUF_BYTES = 410 * 502 * sizeof(lv_color_t);
 
 extern "C" void app_main(void) {
   ESP_ERROR_CHECK(esp_event_loop_create_default());
+
   esp_err_t ret = nvs_flash_init();
 
   if (ret == ESP_ERR_NVS_NO_FREE_PAGES ||
@@ -47,6 +40,5 @@ extern "C" void app_main(void) {
   };
 
   bsp_display_start_with_config(&bsp_display_cfg);
-  style::init();
-  create_task(&launcher::launcher_task_opts);
+  nekos::app::launcher::app.launch();
 }

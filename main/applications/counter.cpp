@@ -1,131 +1,109 @@
-#include "esp32_s3_touch_amoled_2_06.h"
-#include "font/lv_font.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "lvgl.h"
-#include "etl/string.h"
-#include <cstddef>
 #include "counter.hpp"
-#include "styles/styles.hpp"
+#include "app.hpp"
+#include "core/lv_obj.h"
+#include "esp32_s3_touch_amoled_2_06.h"
+#include "freertos/idf_additions.h"
+#include "portmacro.h"
 
-static struct {
-    lv_obj_t *screen;
-    lv_obj_t *count_label;
-    lv_obj_t *btn_inc;
-    lv_obj_t *btn_dec;
-    lv_obj_t *btn_reset;
-    int32_t   count;
-} s_ctx{};
+namespace nekos::app::counter {
 
-static void update_label()
-{
-    char buf[16];
-    snprintf(buf, sizeof(buf), "%ld", (long)s_ctx.count);
-    lv_label_set_text(s_ctx.count_label, buf);
+    static void on_increment(lv_event_t* e) {
+    auto* self = static_cast<nekos::App<State>*>(lv_event_get_user_data(e));
+    self->references.count++;
+    lv_label_set_text_fmt(self->references.label, "%d", self->references.count);
 }
 
-static void on_increment(lv_event_t *e)
-{
-    (void)e;
-    s_ctx.count++;
-    update_label();
+static void on_decrement(lv_event_t* e) {
+    auto* self = static_cast<nekos::App<State>*>(lv_event_get_user_data(e));
+    self->references.count--;
+    lv_label_set_text_fmt(self->references.label, "%d", self->references.count);
 }
 
-static void on_decrement(lv_event_t *e)
-{
-    (void)e;
-    s_ctx.count--;
-    update_label();
+static void on_reset(lv_event_t* e) {
+    auto* self = static_cast<nekos::App<State>*>(lv_event_get_user_data(e));
+    self->references.count = 0;
+    lv_label_set_text_fmt(self->references.label, "%d", self->references.count);
 }
 
-static void on_reset(lv_event_t *e)
-{
-    (void)e;
-    s_ctx.count = 0;
-    update_label();
+static lv_obj_t* make_button(lv_obj_t* parent, const char* text, lv_event_cb_t cb, nekos::App<State>* self) {
+    lv_obj_t* btn = lv_button_create(parent);
+    lv_obj_set_size(btn, 80, 80);
+    lv_obj_set_style_bg_color(btn, lv_color_black(), 0);
+    lv_obj_set_style_bg_opa(btn, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(btn, 1, 0);
+    lv_obj_set_style_border_color(btn, lv_palette_darken(LV_PALETTE_GREY, 3), 0);
+    lv_obj_set_style_radius(btn, 20, 0);
+    lv_obj_set_style_shadow_width(btn, 0, 0);
+    lv_obj_set_style_outline_width(btn, 0, 0);
+    lv_obj_add_event_cb(btn, cb, LV_EVENT_CLICKED, self);
+
+    lv_obj_t* lbl = lv_label_create(btn);
+    lv_label_set_text(lbl, text);
+    lv_obj_set_style_text_color(lbl, lv_palette_lighten(LV_PALETTE_GREY, 1), 0);
+    lv_obj_set_style_text_font(lbl, &lv_font_montserrat_14, 0);
+    lv_obj_align(lbl, LV_ALIGN_CENTER, 0, 0);
+
+    return btn;
 }
 
-static void build_ui()
-{
-    s_ctx.screen = lv_obj_create(nullptr);
-    lv_obj_set_style_bg_color(s_ctx.screen, lv_color_hex(0x1A1A2E), 0);
-    lv_scr_load(s_ctx.screen);
+static void draw(nekos::App<State>* self) {
+    State& s = self->references;
 
-    lv_obj_t *title = lv_label_create(s_ctx.screen);
-    lv_label_set_text(title, "Counter");
-    lv_obj_set_style_text_color(title, lv_color_hex(0xA0A0C0), 0);
-    lv_obj_set_style_text_font(title, &lv_font_montserrat_14, 0);
-    lv_obj_align(title, LV_ALIGN_TOP_MID, 0, 20);
+    lv_obj_set_style_bg_color(s.root, lv_color_black(), 0);
+    lv_obj_set_style_bg_opa(s.root, LV_OPA_COVER, 0);
 
-    s_ctx.count_label = lv_label_create(s_ctx.screen);
-    lv_label_set_text(s_ctx.count_label, "0");
-    lv_obj_set_style_text_color(s_ctx.count_label, lv_color_hex(0xFFFFFF), 0);
-    lv_obj_set_style_text_font(s_ctx.count_label, &lv_font_montserrat_14, 0);
-    lv_obj_align(s_ctx.count_label, LV_ALIGN_CENTER, 0, -20);
+    // Container
+    lv_obj_t* container = lv_obj_create(s.root);
+    lv_obj_remove_style_all(container);
+    lv_obj_set_size(container, lv_pct(100), lv_pct(100));
+    lv_obj_set_style_bg_opa(container, LV_OPA_TRANSP, 0);
+    lv_obj_set_flex_flow(container, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(container, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_row(container, 24, 0);
 
-    lv_obj_t *divider = lv_obj_create(s_ctx.screen);
-    lv_obj_set_size(divider, 120, 2);
-    lv_obj_set_style_bg_color(divider, lv_color_hex(0x3A3A5C), 0);
-    lv_obj_set_style_border_width(divider, 0, 0);
-    lv_obj_set_style_radius(divider, 0, 0);
-    lv_obj_align(divider, LV_ALIGN_CENTER, 0, 18);
+    // Counter label
+    s.label = lv_label_create(container);
+    lv_label_set_text_fmt(s.label, "%d", (int)s.count);
+    lv_obj_set_style_text_color(s.label, lv_color_white(), 0);
+    lv_obj_set_style_text_font(s.label, &lv_font_montserrat_48, 0);
 
+    // Button row
+    lv_obj_t* btn_row = lv_obj_create(container);
+    lv_obj_remove_style_all(btn_row);
+    lv_obj_set_size(btn_row, lv_pct(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_bg_opa(btn_row, LV_OPA_TRANSP, 0);
+    lv_obj_set_flex_flow(btn_row, LV_FLEX_FLOW_ROW);
+    lv_obj_set_flex_align(btn_row, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_pad_column(btn_row, 20, 0);
 
-    s_ctx.btn_dec = lv_btn_create(s_ctx.screen);
-    lv_obj_add_style(s_ctx.btn_dec, &style::button, 0);
-    lv_obj_add_style(s_ctx.btn_dec, &style::button_pressed, LV_STATE_PRESSED);
-    lv_obj_set_style_bg_color(s_ctx.btn_dec, lv_color_hex(0xE74C3C), 0);
-    lv_obj_set_size(s_ctx.btn_dec, 72, 56);
-    lv_obj_align(s_ctx.btn_dec, LV_ALIGN_BOTTOM_MID, -90, -30);
-    lv_obj_add_event_cb(s_ctx.btn_dec, on_decrement, LV_EVENT_CLICKED, nullptr);
-
-    lv_obj_t *lbl_dec = lv_label_create(s_ctx.btn_dec);
-    lv_label_set_text(lbl_dec, LV_SYMBOL_MINUS);
-    lv_obj_center(lbl_dec);
-
-    s_ctx.btn_reset = lv_btn_create(s_ctx.screen);
-    lv_obj_add_style(s_ctx.btn_reset, &style::button, 0);
-    lv_obj_add_style(s_ctx.btn_reset, &style::button_pressed, LV_STATE_PRESSED);
-    lv_obj_set_style_bg_color(s_ctx.btn_reset, lv_color_hex(0x3A3A5C), 0);
-    lv_obj_set_size(s_ctx.btn_reset, 72, 56);
-    lv_obj_align(s_ctx.btn_reset, LV_ALIGN_BOTTOM_MID, 0, -30);
-    lv_obj_add_event_cb(s_ctx.btn_reset, on_reset, LV_EVENT_CLICKED, nullptr);
-
-    lv_obj_t *lbl_rst = lv_label_create(s_ctx.btn_reset);
-    lv_label_set_text(lbl_rst, LV_SYMBOL_REFRESH);
-    lv_obj_center(lbl_rst);
-
-    s_ctx.btn_inc = lv_btn_create(s_ctx.screen);
-    lv_obj_add_style(s_ctx.btn_inc, &style::button, 0);
-    lv_obj_add_style(s_ctx.btn_inc, &style::button_pressed, LV_STATE_PRESSED);
-    lv_obj_set_style_bg_color(s_ctx.btn_inc, lv_color_hex(0x27AE60), 0);
-    lv_obj_set_size(s_ctx.btn_inc, 72, 56);
-    lv_obj_align(s_ctx.btn_inc, LV_ALIGN_BOTTOM_MID, 90, -30);
-    lv_obj_add_event_cb(s_ctx.btn_inc, on_increment, LV_EVENT_CLICKED, nullptr);
-
-    lv_obj_t *lbl_inc = lv_label_create(s_ctx.btn_inc);
-    lv_label_set_text(lbl_inc, LV_SYMBOL_PLUS);
-    lv_obj_center(lbl_inc);
+    make_button(btn_row, "-",     on_decrement, self);
+    make_button(btn_row, "RST",   on_reset,     self);
+    make_button(btn_row, "+",     on_increment, self);
 }
 
-static void counter_task(void *arg)
-{
-    (void)arg;
-    if (bsp_display_lock(100)) {
-        build_ui();
+App<State> app = App<State>::create({
+    .references = {},
+    .name       = "counter",
+    .icon       = "",
+    .fn         = [](nekos::App<State>* self) {
+        bsp_display_lock(portMAX_DELAY);
+        draw(self);
+        lv_screen_load(self->references.root);
         bsp_display_unlock();
-    }
-    while (true) {
-        vTaskDelay(pdMS_TO_TICKS(100));
-    }
-    vTaskDelete(nullptr);
-}
+        while (1) {
+            vTaskDelay(pdMS_TO_TICKS(100));
+        }
+    },
+    .allocater  = [](nekos::App<State>* self) {
+        self->references.root  = lv_obj_create(NULL);
+        self->references.label = nullptr;
+        self->references.count = 0;
+    },
+    .deleter    = [](nekos::App<State>* self) {
+        lv_obj_del(self->references.root);
+        self->references.root  = nullptr;
+        self->references.label = nullptr;
+    },
+});
 
-TaskLaunchOptions counter_task_opts = {
-    .name = "counter_task",
-    .icon = "⏲️",
-    .task = nullptr,
-    .task_fn = counter_task,
-    .task_stack_depth = 4096,
-    .task_priority = 3
-};
+} // namespace nekos::app::counter
