@@ -1,7 +1,11 @@
+#include "driver/i2c_types.h"
 #include "esp32_s3_touch_amoled_2_06.h"
 #include "esp_event.h"
 #include "nvs_flash.h"
 #include "applications/launcher.hpp"
+#include "peripherals.hpp"
+
+i2c_master_bus_handle_t i2c_master_bus;
 
 #define BOOT_BTN_GPIO   GPIO_NUM_0
 #define LONG_PRESS_MS   1000
@@ -38,7 +42,8 @@ extern "C" void app_main(void) {
               .buff_spiram = true,
           },
   };
-
+  
   bsp_display_start_with_config(&bsp_display_cfg);
+
   nekos::app::launcher::app.launch();
 }

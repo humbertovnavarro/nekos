@@ -81,7 +81,6 @@ public:
         a.name        = opts.name;
         a.icon        = opts.icon;
         a.fn          = opts.fn;
-        a.references  = std::move(opts.references);
         a.allocater   = std::move(opts.allocater);
         a.deleter     = std::move(opts.deleter);
         a.stack_depth = opts.stack_depth;

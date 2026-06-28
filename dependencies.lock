@@ -133,7 +133,7 @@ dependencies:
     - esp32s3
     version: 1.0.7
   waveshare/esp_lcd_sh8601:
-    component_hash: 1a2829e9db4e0515bad6ce83368f199dec60519fbba40251d6c8249f5d070ae1
+    component_hash: af135de8ee4a036bcff17bde98e6a96e02202d388fecf6004363e3d3e047943a
     dependencies:
     - name: espressif/cmake_utilities
       registry_url: https://components.espressif.com
@@ -145,32 +145,10 @@ dependencies:
     source:
       registry_url: https://components.espressif.com
       type: service
-    version: 1.0.2
-  waveshare/pcf85063a:
-    component_hash: 9e0088c12613e5bb955e021c3526d82bf964b62dd383db5189c2ffaee7f637ef
-    dependencies:
-    - name: idf
-      require: private
-      version: '>=5.3.2'
-    source:
-      registry_url: https://components.espressif.com/
-      type: service
-    version: 1.1.1
-  waveshare/qmi8658:
-    component_hash: 0f849356dfdcd3c868ad37a74a2cbb00892c69b3b1b18854172715f6eb980e5b
-    dependencies:
-    - name: idf
-      require: private
-      version: '>=5.3.2'
-    source:
-      registry_url: https://components.espressif.com/
-      type: service
-    version: 1.0.1
+    version: 2.0.0
 direct_dependencies:
 - idf
 - waveshare/esp32_s3_touch_amoled_2_06
-- waveshare/pcf85063a
-- waveshare/qmi8658
-manifest_hash: c6c57b05424372fa6b94d9fde5d8fcbd2cdb6c212c1f5dd9a8270b360b1962a3
+manifest_hash: b532f3e62df2547c90eedf4a5e956ea21e9da2b392443e5c53e0afe3056c066a
 target: esp32s3
 version: 2.0.0

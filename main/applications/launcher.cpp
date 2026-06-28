@@ -78,26 +78,30 @@ static void draw(nekos::App<State>* self) {
 static void handoff_task(void* arg) {
     auto* ctx = static_cast<HandoffCtx*>(arg);
     
+    bsp_display_lock(portMAX_DELAY);
     ctx->launcher->stop();
-
     while(ctx->launcher->handle() != nullptr) {
         vTaskDelay(1);
     }
 
     if(ctx->target->launch()) {
-        delete ctx;
         xSemaphoreTake(app.references.semphr, portMAX_DELAY);
         app.references.running = ctx->launcher;
         xSemaphoreGive(app.references.semphr);
-    } else {
+        bsp_display_unlock();
         delete ctx;
+    } else {
         ctx->launcher->launch();
+        while(ctx->launcher->handle() == nullptr) {
+            vTaskDelay(1);
+        }
+        bsp_display_unlock();
+        delete ctx;
     }
     vTaskDelete(nullptr);
 }
 
 App<State> app = App<State>::create({
-    .references = {},
     .name       = "launcher",
     .icon       = "",
     .fn         = [](nekos::App<State>* self) {
@@ -123,7 +127,6 @@ App<State> app = App<State>::create({
         } else {
             xSemaphoreTake(self->references.semphr, portMAX_DELAY);
         }
-
         self->references.root    = lv_obj_create(NULL);
         self->references.apps    = new etl::vector<AppBase*, 32>();
         self->references.pending = nullptr;
