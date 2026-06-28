@@ -1,29 +1,68 @@
 // app.hpp
 #pragma once
+#include "core/lv_obj.h"
 #include "freertos/idf_additions.h"
+#include "misc/lv_types.h"
+#include "portmacro.h"
+#include <cstddef>
+#include <cstdint>
 #include <functional>
 
 namespace nekos {
 
-struct AppBase {
+class IAppState {
+    public:
+    bool allocated = false;
+    lv_obj_t* root;
+    SemaphoreHandle_t semphr;
+
+    inline void lock_from_task() {
+        xSemaphoreTake(semphr, portMAX_DELAY);
+    }
+
+    inline void unlock_from_task() {
+        xSemaphoreGive(semphr);
+    }
+
+    inline void unlock_from_isr() {
+        xSemaphoreTakeFromISR(semphr, 0);
+    }
+
+    inline void lock_from_isr() {
+        xSemaphoreGiveFromISR(semphr, 0);
+    }
+
+    inline void lock(bool is_isr = false) {
+        is_isr ? lock_from_isr() : lock_from_task();
+    }
+
+    inline void unlock(bool is_isr = false) {
+        is_isr ? unlock_from_isr() : unlock_from_task();
+    }
+};
+
+template<typename T>
+class AppState : public IAppState, public T {};
+
+struct IApp {
     const char* name = "";
     const char* icon = "";
-    virtual bool launch()            = 0;
-    virtual bool stop()              = 0;
+    virtual bool launch(bool is_isr = false)            = 0;
+    virtual bool stop(bool is_isr = false)              = 0;
     virtual bool running()     const = 0;
     virtual bool backgrounded() const = 0;
     virtual bool background()        = 0;
     virtual bool foreground()        = 0;
-    virtual ~AppBase() = default;
+    virtual ~IApp() = default;
 };
 
 template<typename T>
-class App : public AppBase {
+class App : public IApp {
 public:
     using TaskFn = void(*)(App*);
 
     struct CreateOptions {
-        T                         references   = {};
+        AppState<T>               state        = {};
         const char*               name         = "";
         const char*               icon         = "";
         TaskFn                    fn           = nullptr;
@@ -37,8 +76,9 @@ public:
 
     size_t                    stack_depth   = 4096;
     uint8_t                   priority      = 3;
-    T                         references;
+    AppState<T>               state;
     TaskFn                    fn            = nullptr;
+    bool allocated = false;
     std::function<void(App*)> allocater;
     std::function<void(App*)> deleter;
     std::function<void(App*)> on_background;
@@ -50,7 +90,7 @@ public:
 
     App(App&& o) noexcept
         : stack_depth(o.stack_depth), priority(o.priority),
-          references(std::move(o.references)),
+          state(std::move(o.state)),
           fn(o.fn),
           allocater(std::move(o.allocater)),
           deleter(std::move(o.deleter)),
@@ -72,7 +112,7 @@ public:
             this->icon    = o.icon;
             stack_depth   = o.stack_depth;
             priority      = o.priority;
-            references    = std::move(o.references);
+            state    = std::move(o.state);
             fn            = o.fn;
             allocater     = std::move(o.allocater);
             deleter       = std::move(o.deleter);
@@ -104,9 +144,22 @@ public:
         return a;
     }
 
-    bool launch() override {
+    bool malloc(bool is_isr = false) {
+        if(!state.allocated) {
+            state.semphr = xSemaphoreCreateMutex();
+            state.lock(is_isr);
+            allocater(this);
+            state.allocated = true;
+            state.unlock(is_isr);
+        }
+        return true;
+    }
+
+    bool launch(bool is_isr = false) override {
         if (running()) return false;
-        allocater(this);
+
+        malloc();
+
         BaseType_t result = xTaskCreate(
             &trampoline,
             name,
@@ -115,18 +168,26 @@ public:
             priority,
             &handle_
         );
+
         if (result != pdPASS) {
+            state.lock(is_isr);
             deleter(this);
+            state.allocated = false;
+            state.unlock(is_isr);
             return false;
         }
+
         return true;
     }
 
-    bool stop() override {
+    bool stop(bool is_isr = false) override {
         if (!running()) return false;
-        vTaskSuspend(handle_);
+        state.lock(is_isr);
         deleter(this);
-        vTaskDelete(handle_);
+        state.unlock(is_isr);
+        if(handle_ != nullptr) {
+            vTaskDelete(handle_);
+        }
         handle_       = nullptr;
         backgrounded_ = false;
         return true;
@@ -163,18 +224,4 @@ private:
     }
 };
 
-#define NEKOS_DISPLAY_BACKGROUND \
-    [](auto self) {                            \
-        bsp_display_lock(portMAX_DELAY);       \
-        lv_obj_del(self->references.root);     \
-        bsp_display_unlock();                  \
-    }
-
-#define NEKOS_DISPLAY_FOREGROUND(draw_fn)  \
-    [](auto self) {                          \
-        bsp_display_lock(portMAX_DELAY);     \
-        draw_fn(self);                          \
-        lv_screen_load(self->references.root); \
-        bsp_display_unlock();                \
-    }
 } // namespace nekos

@@ -1,3 +1,4 @@
+#include "applications/counter.hpp"
 #include "driver/i2c_types.h"
 #include "esp32_s3_touch_amoled_2_06.h"
 #include "esp_event.h"
@@ -13,6 +14,7 @@ i2c_master_bus_handle_t i2c_master_bus;
 static const uint32_t BUF_BYTES = 410 * 502 * sizeof(lv_color_t);
 
 extern "C" void app_main(void) {
+  
   ESP_ERROR_CHECK(esp_event_loop_create_default());
 
   esp_err_t ret = nvs_flash_init();
@@ -45,5 +47,7 @@ extern "C" void app_main(void) {
   
   bsp_display_start_with_config(&bsp_display_cfg);
   i2c_master_bus = bsp_i2c_get_handle();
+  nekos::app::launcher::app.malloc();
+  nekos::app::launcher::register_app(&nekos::app::counter::app);
   nekos::app::launcher::app.launch();
 }

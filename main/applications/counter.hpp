@@ -5,12 +5,11 @@
 
 namespace nekos::app::counter {
 
-struct State {
-    lv_obj_t* root  = nullptr;
+struct CounterState {
     lv_obj_t* label = nullptr;
     int   count = 0;
 };
 
-extern App<State> app;
+extern App<CounterState> app;
 
 } // namespace nekos::app::counter

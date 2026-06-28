@@ -7,20 +7,17 @@
 
 namespace nekos::app::launcher {
 
-struct State {
-    SemaphoreHandle_t semphr = nullptr;
-    lv_obj_t*                         root    = nullptr;
+struct AppLauncherState {
     lv_obj_t*                         app_list = nullptr;
     lv_obj_t*                         launcher = nullptr;
-    etl::vector<nekos::AppBase*, 32>* apps    = nullptr;
-    nekos::AppBase*                   pending = nullptr;
-    nekos::AppBase*                   running = nullptr;
+    etl::vector<nekos::IApp*, 255>*   apps    = nullptr;
+    nekos::IApp*                      pending = nullptr;
+    nekos::IApp*                      running = nullptr;
+    bool launching = false;
 };
 
-bool register_app(nekos::AppBase* app);
+bool register_app(IApp* a, bool is_isr = false);
 
-extern nekos::App<State> app;
-
-
+extern nekos::App<AppLauncherState> app;
 
 } // namespace nekos::app::launcher
