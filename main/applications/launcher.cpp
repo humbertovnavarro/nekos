@@ -5,11 +5,11 @@
 #include "display/lv_display.h"
 #include "esp32_s3_touch_amoled_2_06.h"
 #include "etl/vector.h"
+#include "font/lv_symbol_def.h"
 #include "freertos/idf_additions.h"
 #include "lv_api_map_v8.h"
 #include "portmacro.h"
 #include <cstddef>
-#include <utility>
 
 namespace nekos::app::launcher {
 
@@ -20,7 +20,9 @@ struct HandoffCtx {
 
 static void on_button_press(lv_event_t* e) {
     auto* pressed= static_cast<nekos::AppBase*>(lv_event_get_user_data(e));
+    xSemaphoreTakeFromISR(app.references.semphr, 0);
     app.references.pending = pressed;
+    xSemaphoreGiveFromISR(app.references.semphr, 0);
 }
 
 static lv_obj_t* draw_button(lv_obj_t* parent, nekos::AppBase* a) {
@@ -103,7 +105,7 @@ static void handoff_task(void* arg) {
 
 App<State> app = App<State>::create({
     .name       = "launcher",
-    .icon       = "",
+    .icon       = LV_SYMBOL_EYE_OPEN,
     .fn         = [](nekos::App<State>* self) {
         bsp_display_lock(portMAX_DELAY);
         draw(self);
