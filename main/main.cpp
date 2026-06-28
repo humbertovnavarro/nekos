@@ -44,6 +44,6 @@ extern "C" void app_main(void) {
   };
   
   bsp_display_start_with_config(&bsp_display_cfg);
-
+  i2c_master_bus = bsp_i2c_get_handle();
   nekos::app::launcher::app.launch();
 }
