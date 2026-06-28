@@ -18,6 +18,9 @@ struct HandoffCtx {
 
 static void on_button_press(lv_event_t* e) {
     auto* pressed = static_cast<nekos::AppBase*>(lv_event_get_user_data(e));
+    if(app.references.pending != nullptr) {
+        return;
+    }
     xSemaphoreTake(app.references.semphr, portMAX_DELAY);
     app.references.pending = pressed;
     xSemaphoreGive(app.references.semphr);
