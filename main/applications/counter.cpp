@@ -7,20 +7,22 @@
 
 namespace nekos::app::counter {
 
+// ── Event handlers ────────────────────────────────────────────────────────────
+
 static void on_increment(lv_event_t* e) {
     auto* self = static_cast<nekos::App<CounterState>*>(lv_event_get_user_data(e));
     self->state.lock();
-    self->state.count++;
+    int count = ++self->state.count;
     self->state.unlock();
-    lv_label_set_text_fmt(self->state.label, "%d", self->state.count);
+    lv_label_set_text_fmt(self->state.label, "%d", count);
 }
 
 static void on_decrement(lv_event_t* e) {
     auto* self = static_cast<nekos::App<CounterState>*>(lv_event_get_user_data(e));
     self->state.lock();
-    self->state.count--;
+    int count = --self->state.count;
     self->state.unlock();
-    lv_label_set_text_fmt(self->state.label, "%d", self->state.count);
+    lv_label_set_text_fmt(self->state.label, "%d", count);
 }
 
 static void on_reset(lv_event_t* e) {
@@ -28,10 +30,13 @@ static void on_reset(lv_event_t* e) {
     self->state.lock();
     self->state.count = 0;
     self->state.unlock();
-    lv_label_set_text_fmt(self->state.label, "%d", self->state.count);
+    lv_label_set_text_fmt(self->state.label, "%d", 0);
 }
 
-static lv_obj_t* draw_button(lv_obj_t* parent, const char* text, lv_event_cb_t cb, nekos::App<CounterState>* self) {
+// ── UI ────────────────────────────────────────────────────────────────────────
+
+static lv_obj_t* draw_button(lv_obj_t* parent, const char* text,
+                              lv_event_cb_t cb, nekos::App<CounterState>* self) {
     lv_obj_t* btn = lv_button_create(parent);
     lv_obj_set_size(btn, 80, 80);
     lv_obj_set_style_bg_color(btn, lv_color_black(), 0);
@@ -79,35 +84,35 @@ static void draw(nekos::App<CounterState>* self) {
     lv_obj_set_flex_align(btn_row, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_set_style_pad_column(btn_row, 20, 0);
 
-    draw_button(btn_row, "-",     on_decrement, self);
-    draw_button(btn_row, "RST",   on_reset,     self);
-    draw_button(btn_row, "+",     on_increment, self);
+    draw_button(btn_row, "-",   on_decrement, self);
+    draw_button(btn_row, "RST", on_reset,     self);
+    draw_button(btn_row, "+",   on_increment, self);
 }
 
 App<CounterState> app = App<CounterState>::create({
-    .name       = "counter",
-    .icon       = "",
-    .fn         = [](App<CounterState>* self) {
+    .name = "counter",
+    .icon = "",
+    .fn   = [](App<CounterState>* self) {
+        // ── Setup ─────────────────────────────────────────────────────────────
+        self->state.count = 0;
+        self->state.label = nullptr;
+
         bsp_display_lock(portMAX_DELAY);
+        self->state.root = lv_obj_create(NULL);
         draw(self);
         lv_screen_load(self->state.root);
         bsp_display_unlock();
-        while (1) {
-            vTaskDelay(pdMS_TO_TICKS(100));
-        }
-    },
-    .allocater  = [](App<CounterState>* self) {
-        self->state.root  = lv_obj_create(NULL);
-        self->state.label = nullptr;
-        self->state.count = 0;
-    },
-    .deleter    = [](App<CounterState>* self) {
+
+        // ── Loop ──────────────────────────────────────────────────────────────
+        while (self->poll()) {}
+
+        // ── Teardown ──────────────────────────────────────────────────────────
         bsp_display_lock(portMAX_DELAY);
         lv_obj_del(self->state.root);
-        bsp_display_unlock();
         self->state.root  = nullptr;
         self->state.label = nullptr;
-    }
+        bsp_display_unlock();
+    },
 });
 
 } // namespace nekos::app::counter

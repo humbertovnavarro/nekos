@@ -1,6 +1,5 @@
 #include "launcher.hpp"
 #include "app.hpp"
-#include "applications/counter.hpp"
 #include "core/lv_obj.h"
 #include "core/lv_obj_event.h"
 #include "display/lv_display.h"
@@ -8,30 +7,24 @@
 #include "etl/vector.h"
 #include "font/lv_symbol_def.h"
 #include "freertos/idf_additions.h"
-#include "lv_api_map_v8.h"
 #include "portmacro.h"
+#include "esp_log.h"
 #include <cstddef>
 #include <cstdint>
-#include "esp_log.h"
 
 namespace nekos::app::launcher {
 
+// ── UI ────────────────────────────────────────────────────────────────────────
+
 static void on_button_press(lv_event_t* e) {
     auto* pressed = static_cast<nekos::IApp*>(lv_event_get_user_data(e));
-    
+    if (pressed == nullptr) return;
+
     app.state.lock();
-
-    if(pressed == nullptr) {
-        app.state.unlock();
-        return;
-    } else if (app.state.pending != nullptr) {
-        app.state.unlock();
-        return;
-    } else {
+    if (app.state.pending == nullptr) {
         app.state.pending = pressed;
-        app.state.unlock();
     }
-
+    app.state.unlock();
 }
 
 static lv_obj_t* draw_button(lv_obj_t* parent, nekos::IApp* a) {
@@ -57,7 +50,7 @@ static lv_obj_t* draw_button(lv_obj_t* parent, nekos::IApp* a) {
 
 static void draw_app_list(nekos::App<AppLauncherState>* self) {
     AppLauncherState& s = self->state;
-    
+
     lv_obj_clean(s.app_list);
     lv_obj_remove_style_all(s.app_list);
     lv_obj_set_size(s.app_list, lv_pct(100), lv_pct(100));
@@ -78,53 +71,98 @@ static void draw_app_list(nekos::App<AppLauncherState>* self) {
     }
 }
 
-static void draw(nekos::App<AppLauncherState>* self) {
+static void ui_build(nekos::App<AppLauncherState>* self) {
+    bsp_display_lock(portMAX_DELAY);
+    self->state.root     = lv_obj_create(NULL);
+    self->state.launcher = lv_obj_create(self->state.root);
+    self->state.app_list = lv_obj_create(self->state.launcher);
+
     lv_obj_set_style_bg_color(self->state.root, lv_color_black(), 0);
     lv_obj_set_style_bg_opa(self->state.root, LV_OPA_COVER, 0);
     lv_obj_remove_style_all(self->state.launcher);
     lv_obj_set_size(self->state.launcher, lv_pct(100), lv_pct(100));
     lv_obj_set_style_bg_opa(self->state.launcher, LV_OPA_TRANSP, 0);
+
     draw_app_list(self);
+    lv_screen_load(self->state.root);
+    bsp_display_unlock();
 }
 
-App<AppLauncherState> app = App<AppLauncherState>::create({
-    .name      = "launcher",
-    .icon      = LV_SYMBOL_EYE_OPEN,
-    .fn        = [](nekos::App<AppLauncherState>* self) {
-        bsp_display_lock(portMAX_DELAY);
-        self->state.root = lv_obj_create(NULL);
-        self->state.launcher = lv_obj_create(self->state.root);
-        self->state.app_list = lv_obj_create(self->state.launcher);
-        draw(self);
-        lv_screen_load(self->state.root);
-        bsp_display_unlock();
+static void ui_destroy(nekos::App<AppLauncherState>* self) {
+    bsp_display_lock(portMAX_DELAY);
+    if (self->state.root != nullptr) {
+        lv_obj_del(self->state.root);
+        self->state.root     = nullptr;
+        self->state.launcher = nullptr;
+        self->state.app_list = nullptr;
+    }
+    bsp_display_unlock();
+}
 
-        while (true) {
-            auto* pending = self->state.pending;
-            if (pending != nullptr) {
-                lv_obj_del(self->state.root);
-                self->state.running = self->state.pending;
-                self->state.pending->launch();
-                vTaskDelete(nullptr);
+// ── App definition ────────────────────────────────────────────────────────────
+
+App<AppLauncherState> app = App<AppLauncherState>::create({
+    .name = "launcher",
+    .icon = LV_SYMBOL_EYE_OPEN,
+    .fn   = [](nekos::App<AppLauncherState>* self) {
+        self->state.apps    = new etl::vector<IApp*, 255>();
+        self->state.pending = nullptr;
+        self->state.running = nullptr;
+
+        ui_build(self);
+
+        while (self->poll()) {
+
+            if(self->signalled(AppSignal::StateDirty)) {
+                bsp_display_lock(portMAX_DELAY);
+                draw_app_list(self);
+                bsp_display_unlock();
             }
-            vTaskDelay(pdMS_TO_TICKS(100));
+
+            self->state.lock();
+            IApp* pending       = self->state.pending;
+            self->state.pending = nullptr;
+            self->state.unlock();
+            if (pending == nullptr) continue;
+
+            ui_destroy(self);
+
+            self->state.running = pending;
+            pending->launch();
+
+            while (self->state.running->running()) {
+                vTaskDelay(pdMS_TO_TICKS(100));
+            }
+
+            self->state.running = nullptr;
+            ui_build(self);
         }
-    },
-    .allocater = [](nekos::App<AppLauncherState>* self) {
-        self->state.apps = new etl::vector<IApp*, 255>();
-    },
-    .deleter   = [](nekos::App<AppLauncherState>* self) {
+
+        // ── Teardown (Stop received) ───────────────────────────────────────────
+        self->state.lock();
+        IApp* running = self->state.running;
+        self->state.unlock();
+
+        if (running != nullptr && running->running()) {
+            running->stop();
+        }
+
+        ui_destroy(self);
+
+        delete self->state.apps;
+        self->state.apps = nullptr;
     },
 });
 
 bool register_app(IApp* a, bool is_isr) {
-    if (app.state.apps == nullptr || !app.state.allocated) {
-        ESP_LOGE("launcher", "tried to register an app before allocating launcher. call nekos::app::launcher::malloc");
+    if (app.state.apps == nullptr) {
+        ESP_LOGE("launcher", "register_app called before launcher is running");
         return false;
     }
     app.state.lock(is_isr);
     app.state.apps->push_back(a);
     app.state.unlock(is_isr);
+    app.dirty();
     return true;
 }
 
